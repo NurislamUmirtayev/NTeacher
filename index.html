@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NurislamTeaches</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#faf5ec;--card:#fff;--ink:#241d18;--mute:#7b6f64;--acc:#c4552d;--acc2:#2f5d62;--line:#eadfcc;--sh:0 10px 34px rgba(70,45,20,.09);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171310;--card:#241e19;--ink:#f4ece1;--mute:#a99c8d;--acc:#ec845d;--acc2:#82b9bd;--line:#3a3128;--sh:0 10px 34px rgba(0,0,0,.45)}}
+:root[data-theme="dark"]{--bg:#171310;--card:#241e19;--ink:#f4ece1;--mute:#a99c8d;--acc:#ec845d;--acc2:#82b9bd;--line:#3a3128;--sh:0 10px 34px rgba(0,0,0,.45)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Inter,system-ui,sans-serif;min-height:100vh}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(600px 400px at 85% -5%,color-mix(in srgb,var(--acc) 16%,transparent),transparent),radial-gradient(500px 400px at -5% 40%,color-mix(in srgb,var(--acc2) 14%,transparent),transparent);pointer-events:none;z-index:-1}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;margin:0;line-height:1.12}
+.hide{display:none!important}
+header{max-width:1080px;margin:0 auto;padding:20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:23px;display:flex;align-items:center;gap:10px}
+.logo b{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;display:grid;place-items:center;font-size:18px}
+.logo span{color:var(--acc)}
+.right{display:flex;align-items:center;gap:10px}
+nav{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:4px}
+nav button,.pill{border:0;background:none;color:var(--mute);font:500 14px Inter,sans-serif;padding:8px 16px;border-radius:99px;cursor:pointer}
+nav button.on{background:var(--ink);color:var(--bg)}
+.pill{border:1px solid var(--line);background:var(--card)}
+main{max-width:1080px;margin:0 auto;padding:0 20px 70px}
+.login{min-height:calc(100vh - 90px);display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center;max-width:1000px;margin:0 auto;padding:0 20px}
+.login h1{font-size:clamp(40px,7vw,68px)}.login h1 em{color:var(--acc)}
+.login .sub{color:var(--mute);font-size:18px;margin:16px 0 0;max-width:440px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:26px;padding:28px;box-shadow:var(--sh)}
+.box h2{font-size:26px;margin-bottom:6px}
+.tabs{display:flex;gap:6px;background:var(--bg);border-radius:12px;padding:4px;margin:14px 0 4px}
+.tabs button{flex:1;border:0;background:none;padding:9px;border-radius:9px;font:600 14px Inter,sans-serif;color:var(--mute);cursor:pointer}
+.tabs button.on{background:var(--card);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+label{display:block;font-size:13px;font-weight:600;color:var(--mute);margin:14px 0 5px}
+input[type=text],input[type=password],textarea,select{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--acc);outline-offset:1px}
+textarea{min-height:80px;resize:vertical}
+.btn{border:0;background:var(--acc);color:#fff;font:600 15px Inter,sans-serif;padding:13px 22px;border-radius:12px;cursor:pointer;margin-top:18px;width:100%}
+.btn.sm{width:auto;margin:0;padding:7px 13px;font-size:13px}
+.btn.ghost{background:none;color:#b3261e;border:1px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:wait}
+.err{color:#b3261e;font-size:14px;margin-top:10px;min-height:20px}.ok{color:var(--acc2);font-size:14px;margin-top:10px}
+.hero{padding:26px 0 18px}.hero h1{font-size:clamp(32px,5.5vw,52px)}.hero h1 em{color:var(--acc)}
+.hero p{color:var(--mute);margin:10px 0 0}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 22px}
+.bar input{flex:1;min-width:180px}.chip{border:1px solid var(--line);background:var(--card);color:var(--mute);border-radius:99px;padding:8px 16px;font:500 14px Inter,sans-serif;cursor:pointer}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:var(--sh);cursor:pointer;transition:transform .25s,box-shadow .25s}
+.card:hover{transform:translateY(-5px)}
+.thumb{aspect-ratio:16/9;background:linear-gradient(135deg,var(--acc),var(--acc2));position:relative;overflow:hidden}
+.thumb video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.play{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(transparent 50%,rgba(0,0,0,.35))}
+.play i{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.95);display:grid;place-items:center;color:var(--acc);font-style:normal;padding-left:4px}
+.num{position:absolute;top:12px;left:12px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;z-index:1}
+.cb{padding:16px 20px 20px}.cb h3{font-size:21px}.cb p{color:var(--mute);font-size:14px;margin:6px 0 0}
+.tag{display:inline-block;font-size:12px;font-weight:600;color:var(--acc2);background:color-mix(in srgb,var(--acc2) 14%,transparent);padding:3px 11px;border-radius:99px;margin-bottom:8px}
+.player{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:16px;box-shadow:var(--sh)}
+.player video{width:100%;border-radius:16px;background:#000;display:block;max-height:72vh}
+.player h2{font-size:32px;margin:18px 6px 6px}.player p{margin:0 6px 6px;color:var(--mute)}
+.back{border:0;background:none;color:var(--acc);font:600 14px Inter,sans-serif;cursor:pointer;margin:0 0 14px;padding:0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:var(--sh);margin-bottom:22px}
+.panel h2{font-size:25px;margin-bottom:6px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:16px;color:var(--mute)}
+.row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.row b{flex:1;min-width:120px}.row small{color:var(--mute)}
+.stat{display:flex;gap:14px;margin:4px 0 22px;flex-wrap:wrap}
+.stat div{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 22px}.stat b{font:700 28px Fraunces,serif;display:block;color:var(--acc)}
+.empty{color:var(--mute);padding:26px 0}
+.cred{background:color-mix(in srgb,var(--acc2) 12%,transparent);border:1px solid var(--acc2);border-radius:14px;padding:12px 16px;margin-top:14px;font-size:14px}
+@media(max-width:760px){.login{grid-template-columns:1fr;gap:24px;padding-top:10px}.two{grid-template-columns:1fr}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<header>
+  <div class="logo"><b>N</b><div>Nurislam<span>Teaches</span></div></div>
+  <div class="right"><nav id="nav" class="hide"><button id="tL" class="on">Lessons</button><button id="tA" class="hide">Admin</button></nav><button class="pill hide" id="out">Log out</button></div>
+</header>
+
+<div id="login" class="login">
+  <div>
+    <h1>Learn English <em>with Nurislam.</em></h1>
+    <p class="sub">Your personal video lessons, any time you want. Log in with the username and password from your teacher.</p>
+  </div>
+  <div class="box">
+    <h2>Welcome back</h2><p style="color:var(--mute);margin:0 0 4px">Log in with your username and password.</p>
+    <div class="tabs"><button id="mS" class="on" type="button">Student</button><button id="mA" type="button">Admin</button></div>
+        <label>Username</label><input type="text" id="lu" autocomplete="username" autocapitalize="off">
+    <label>Password</label><input type="password" id="lp" autocomplete="current-password">
+    <button class="btn" id="lb">Log in</button>
+    <div class="err" id="le"></div>
+  </div>
+</div>
+
+<main id="app" class="hide">
+  <section id="vL">
+    <div class="hero"><h1>Hello, <em id="who">student</em> 👋</h1><p>Pick a lesson and press play.</p></div>
+    <div class="bar"><input type="text" id="q" placeholder="Search lessons…"><span id="chips" style="display:contents"></span></div>
+    <div id="grid" class="grid"></div>
+    <div id="empty" class="empty hide">No lessons found.</div>
+  </section>
+  <section id="vP" class="hide">
+    <button class="back" id="back">← All lessons</button>
+    <div class="player"><video id="pv" controls playsinline controlsList="nodownload"></video><h2 id="pt"></h2><p id="pd"></p><span class="tag" id="pl" style="margin:8px 6px"></span></div>
+  </section>
+  <section id="vA" class="hide">
+    <div class="stat"><div><b id="nL">0</b>lessons</div><div><b id="nS">0</b>students</div></div>
+    <div class="panel">
+      <h2>Add a student</h2><p style="color:var(--mute);margin:0">Create a username and password, then send them to your student.</p>
+      <div class="two"><div><label>Full name</label><input type="text" id="sN"></div><div><label>Username</label><input type="text" id="sU" autocapitalize="off"></div></div>
+      <label>Password</label><div style="display:flex;gap:8px"><input type="text" id="sP"><button class="btn sm" id="gen" type="button" style="background:var(--acc2)">Generate</button></div>
+      <button class="btn" id="sB">Add student</button><div id="sM"></div>
+    </div>
+    <div class="panel"><h2>Students</h2><div id="sList"></div></div>
+    <div class="panel">
+      <h2>Add a lesson</h2>
+      <label>Title</label><input type="text" id="aT" placeholder="e.g. Present Perfect">
+      <label>Description</label><textarea id="aD" placeholder="What will students learn?"></textarea>
+      <div class="two"><div><label>Level</label><select id="aLv"><option>Beginner</option><option>Elementary</option><option selected>Intermediate</option><option>Upper-Intermediate</option><option>Advanced</option></select></div>
+      <div><label>Video (MP4, max 50 MB)</label><div class="drop"><input type="file" id="aF" accept="video/*"></div></div></div>
+      <button class="btn" id="aS">Upload lesson</button><div id="aM"></div>
+    </div>
+    <div class="panel"><h2>Your lessons</h2><div id="aList"></div></div>
+  </section>
+</main>
+
+<script>
+/* ====== PUT YOUR SUPABASE DETAILS HERE ====== */
+const SUPABASE_URL='https://uvphdcjfrdofydfqdzrg.supabase.co';
+const SUPABASE_ANON_KEY='sb_publishable_Zz8iBHd7mwIwIs33WFsD8w_9biFTX2c';
+/* ============================================ */
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const emailOf=u=>u.toLowerCase().trim()+'@nurislamteaches.app';
+let lessons=[],students=[],me=null,filter='All',mode='S';
+
+function show(v){['vL','vP','vA'].forEach(x=>$(x).classList.toggle('hide',x!==v));
+  $('tL').classList.toggle('on',v!=='vA');$('tA').classList.toggle('on',v==='vA');
+  if(v!=='vP')$('pv').pause();scrollTo(0,0)}
+$('tL').onclick=()=>show('vL');$('tA').onclick=()=>show('vA');$('back').onclick=()=>show('vL');
+['lu','lp'].forEach(i=>$(i).addEventListener('keydown',e=>{if(e.key==='Enter')$('lb').click()}));
+
+function setMode(m){mode=m;$('mS').classList.toggle('on',m==='S');$('mA').classList.toggle('on',m==='A');$('le').textContent='';
+  $('lu').placeholder=m==='A'?'Admin username':'';}
+$('mS').onclick=()=>setMode('S');$('mA').onclick=()=>setMode('A');
+$('lb').onclick=async()=>{
+  const u=$('lu').value.trim(),p=$('lp').value;$('le').textContent='';
+  if(!u||!p){$('le').textContent='Enter your username and password.';return}
+  $('lb').disabled=true;
+  const {error}=await sb.auth.signInWithPassword({email:emailOf(u),password:p});
+  $('lb').disabled=false;
+  if(error){$('le').textContent='Wrong username or password.';return}
+  await start(mode==='A');
+};
+async function start(adminOnly){
+  const {data:{user}}=await sb.auth.getUser();if(!user)return;
+  const {data:prof}=await sb.from('profiles').select('*').eq('id',user.id).single();
+  if(!prof||!prof.active){await sb.auth.signOut();$('le').textContent='Your account is not active. Ask your teacher.';return}
+  if(adminOnly&&prof.role!=='admin'){await sb.auth.signOut();$('le').textContent='This account is not an admin.';return}
+  me=prof;enter();
+}
+async function enter(){
+  $('login').classList.add('hide');$('app').classList.remove('hide');$('nav').classList.remove('hide');$('out').classList.remove('hide');
+  $('tA').classList.toggle('hide',me.role!=='admin');$('who').textContent=me.full_name.split(' ')[0];
+  await loadLessons();if(me.role==='admin')await loadStudents();
+  show(me.role==='admin'?'vA':'vL');render();
+}
+$('out').onclick=async()=>{await sb.auth.signOut();me=null;$('lp').value='';['app','nav','out'].forEach(x=>$(x).classList.add('hide'));$('login').classList.remove('hide');$('pv').pause()};
+
+async function loadLessons(){
+  const {data}=await sb.from('lessons').select('*').order('created_at');
+  lessons=data||[];
+  if(lessons.length){
+    const {data:urls}=await sb.storage.from('videos').createSignedUrls(lessons.map(l=>l.video_path),7200);
+    const m={};(urls||[]).forEach(x=>m[x.path]=x.signedUrl);
+    lessons.forEach(l=>l.url=m[l.video_path]||'');
+  }
+}
+async function loadStudents(){
+  const {data}=await sb.from('profiles').select('*').eq('role','student').order('full_name');
+  students=data||[];
+}
+function render(){
+  const lv=['All',...new Set(lessons.map(l=>l.level))],q=$('q').value.toLowerCase();
+  $('chips').innerHTML=lv.map(x=>`<button class="chip ${x===filter?'on':''}" data-c="${esc(x)}">${esc(x)}</button>`).join('');
+  document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{filter=b.dataset.c;render()});
+  const list=lessons.map((l,i)=>({...l,n:i+1})).filter(l=>(filter==='All'||l.level===filter)&&((l.title||'')+(l.description||'')).toLowerCase().includes(q));
+  $('empty').classList.toggle('hide',list.length>0);
+  $('grid').innerHTML=list.map(l=>`<div class="card" data-id="${l.id}"><div class="thumb"><span class="num">Lesson ${l.n}</span><video src="${esc(l.url)}#t=1" preload="metadata" muted></video><div class="play"><i>▶</i></div></div><div class="cb"><span class="tag">${esc(l.level)}</span><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div></div>`).join('');
+  document.querySelectorAll('.card').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP')});
+  $('nL').textContent=lessons.length;$('nS').textContent=students.length;
+  $('aList').innerHTML=lessons.length?lessons.map(l=>`<div class="row"><b>${esc(l.title)}</b><span class="tag" style="margin:0">${esc(l.level)}</span><button class="btn sm ghost" data-dl="${l.id}">Delete</button></div>`).join(''):'<div class="empty">No lessons yet.</div>';
+  document.querySelectorAll('[data-dl]').forEach(b=>b.onclick=async()=>{const l=lessons.find(x=>x.id===b.dataset.dl);if(!confirm('Delete "'+l.title+'"?'))return;
+    await sb.storage.from('videos').remove([l.video_path]);const {error}=await sb.from('lessons').delete().eq('id',l.id);
+    if(error)return alert(error.message);await loadLessons();render()});
+  $('sList').innerHTML=students.length?students.map(s=>`<div class="row"><b>${esc(s.full_name)}<br><small>@${esc(s.username)} ${s.active?'':'· disabled'}</small></b><button class="btn sm ghost" data-ts="${s.id}">${s.active?'Disable':'Enable'}</button></div>`).join(''):'<div class="empty">No students yet.</div>';
+  document.querySelectorAll('[data-ts]').forEach(b=>b.onclick=async()=>{const s=students.find(x=>x.id===b.dataset.ts);
+    const {error}=await sb.from('profiles').update({active:!s.active}).eq('id',s.id);if(error)return alert(error.message);await loadStudents();render()});
+}
+$('q').oninput=render;
+
+$('gen').onclick=()=>{const w=['sun','moon','star','river','tiger','maple','cloud','pearl','eagle','lemon'];$('sP').value=w[Math.random()*10|0]+w[Math.random()*10|0]+(100+Math.random()*900|0)};
+$('sB').onclick=async()=>{
+  const n=$('sN').value.trim(),u=$('sU').value.trim().toLowerCase().replace(/[^a-z0-9._-]/g,''),p=$('sP').value,m=$('sM');
+  if(!n||!u||p.length<6){m.className='err';m.textContent='Fill in name, username and a password (6+ characters).';return}
+  $('sB').disabled=true;
+  // a separate, non-persistent client so the admin stays logged in
+  const tmp=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+  const {data,error}=await tmp.auth.signUp({email:emailOf(u),password:p,options:{data:{username:u,full_name:n}}});
+  if(error||!data.user){m.className='err';m.textContent='Failed: '+(error?error.message:'unknown error');$('sB').disabled=false;return}
+  const {error:e2}=await sb.from('profiles').update({active:true}).eq('id',data.user.id);
+  $('sB').disabled=false;
+  if(e2){m.className='err';m.textContent='Account created but could not activate: '+e2.message;return}
+  m.className='';m.innerHTML=`<div class="cred">✅ Student added. Send them this:<br><b>Username:</b> ${esc(u)}<br><b>Password:</b> ${esc(p)}<br><small>The password is shown only now — it can't be viewed later.</small></div>`;
+  $('sN').value=$('sU').value=$('sP').value='';await loadStudents();render();
+};
+$('aS').onclick=async()=>{
+  const f=$('aF').files[0],t=$('aT').value.trim(),m=$('aM'),b=$('aS');m.className='err';
+  if(!t||!f){m.textContent='Add a title and choose a video.';return}
+  if(f.size>50*1024*1024){m.textContent='Video is over 50 MB. Compress it first.';return}
+  b.disabled=true;m.className='ok';m.textContent='Uploading… please wait.';
+  const path=crypto.randomUUID()+'.mp4';
+  const up=await sb.storage.from('videos').upload(path,f,{contentType:f.type||'video/mp4'});
+  if(up.error){m.className='err';m.textContent='Upload failed: '+up.error.message;b.disabled=false;return}
+  const {error}=await sb.from('lessons').insert({title:t,description:$('aD').value.trim(),level:$('aLv').value,video_path:path});
+  b.disabled=false;
+  if(error){m.className='err';m.textContent='Failed: '+error.message;return}
+  $('aT').value=$('aD').value=$('aF').value='';m.textContent='Lesson added!';await loadLessons();render();
+};
+$('q').oninput=render;
+sb.auth.getSession().then(({data})=>{if(data.session)start()});
+</script>
+</body>
+</html>
