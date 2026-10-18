@@ -76,6 +76,12 @@ textarea{min-height:80px;resize:vertical}
 .opt{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;cursor:pointer;margin:2px 0}
 .opt input[type=radio]{width:auto;flex:none}
 .opt.good{background:color-mix(in srgb,#2e9e5b 24%,transparent)}.opt.bad{background:color-mix(in srgb,#c0392b 24%,transparent)}
+.topics{display:flex;flex-direction:column;gap:12px}
+.topic{display:flex;align-items:center;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 20px;box-shadow:var(--sh);cursor:pointer;transition:transform .2s}
+.topic:hover{transform:translateX(4px)}.topic>div{flex:1;min-width:0}.topic h3{font-size:20px}
+.topic p{margin:2px 0 0;color:var(--mute);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tn{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;display:grid;place-items:center;font:700 17px Fraunces,serif;flex:none}
+.topic i{font-style:normal;color:var(--mute);font-size:26px}
 @media(max-width:760px){.login{grid-template-columns:1fr;gap:24px;padding-top:10px}.two{grid-template-columns:1fr}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -83,7 +89,7 @@ textarea{min-height:80px;resize:vertical}
 <body>
 <header>
   <div class="logo"><b>N</b><div>Nurislam<span>Teaches</span></div></div>
-  <div class="right"><nav id="nav" class="hide"><button id="tL" class="on">Lessons</button><button id="tA" class="hide">Admin</button></nav><button class="pill hide" id="out">Log out</button></div>
+  <div class="right"><nav id="nav" class="hide"><button id="tL" class="on">Lessons</button><button id="tH" class="hide">Homework</button><button id="tA" class="hide">Admin</button></nav><button class="pill hide" id="out">Log out</button></div>
 </header>
 
 <div id="login" class="login">
@@ -105,14 +111,18 @@ textarea{min-height:80px;resize:vertical}
   <section id="vL">
     <div class="hero"><h1>Hello, <em id="who">student</em> 👋</h1><p>Pick a lesson and press play.</p></div>
     <div class="bar"><input type="text" id="q" placeholder="Search lessons…"><span id="chips" style="display:contents"></span></div>
-    <div id="grid" class="grid"></div>
+    <div id="grid" class="topics"></div>
     <div id="empty" class="empty hide">No lessons found.</div>
   </section>
   <section id="vP" class="hide">
     <button class="back" id="back">← All lessons</button>
     <div class="player"><video id="pv" controls playsinline controlsList="nodownload"></video><h2 id="pt"></h2><p id="pd"></p><span class="tag" id="pl" style="margin:8px 6px"></span></div>
     <div class="player hide" id="testBox" style="margin-top:20px"></div>
-    <div class="player hide" id="hwBox" style="margin-top:20px"></div>
+  </section>
+  <section id="vH" class="hide">
+    <div class="hero"><h1>My <em>homework</em></h1><p>Tasks from your lessons. Pick one to send your answer.</p></div>
+    <div id="hwS1"><div id="hwTopics" class="topics"></div></div>
+    <div id="hwS2" class="hide"><button class="back" id="hwBack">← All homework</button><div class="player" id="hwBox"></div></div>
   </section>
   <section id="vA" class="hide">
     <div class="stat"><div><b id="nL">0</b>lessons</div><div><b id="nS">0</b>students</div><div><b id="nH">0</b>homework to check</div></div>
@@ -160,9 +170,9 @@ let lessons=[],students=[],me=null,filter='All',mode='S';
 const LEVELS=['Beginner','Elementary','Pre-Intermediate','Intermediate','Advanced'];
 ['aLv','sL'].forEach(id=>$(id).innerHTML=LEVELS.map(x=>`<option>${x}</option>`).join(''));$('aLv').value='Intermediate';
 
-function show(v){['vL','vP','vA'].forEach(x=>$(x).classList.toggle('hide',x!==v));
-  $('tL').classList.toggle('on',v!=='vA');$('tA').classList.toggle('on',v==='vA');
-  if(v!=='vP'){$('pv').pause();$('testBox').classList.add('hide');$('hwBox').classList.add('hide')}scrollTo(0,0)}
+function show(v){['vL','vP','vH','vA'].forEach(x=>$(x).classList.toggle('hide',x!==v));
+  $('tL').classList.toggle('on',v==='vL'||v==='vP');$('tH').classList.toggle('on',v==='vH');$('tA').classList.toggle('on',v==='vA');
+  if(v!=='vP'){$('pv').pause();$('testBox').classList.add('hide')}scrollTo(0,0)}
 $('tL').onclick=()=>show('vL');$('tA').onclick=()=>show('vA');$('back').onclick=()=>show('vL');
 ['lu','lp'].forEach(i=>$(i).addEventListener('keydown',e=>{if(e.key==='Enter')$('lb').click()}));
 
@@ -187,8 +197,8 @@ async function start(adminOnly){
 }
 async function enter(){
   $('login').classList.add('hide');$('app').classList.remove('hide');$('nav').classList.remove('hide');$('out').classList.remove('hide');
-  $('tA').classList.toggle('hide',me.role!=='admin');$('who').textContent=me.full_name.split(' ')[0];
-  document.querySelector('.hero p').textContent=me.role==='student'?'Your level: '+me.level+'. Pick a lesson and press play.':'Pick a lesson and press play.';
+  $('tA').classList.toggle('hide',me.role!=='admin');$('tH').classList.toggle('hide',me.role!=='student');$('who').textContent=me.full_name.split(' ')[0];
+  document.querySelector('.hero p').textContent=me.role==='student'?'Your level: '+me.level+'. Pick a topic to watch the video and do the test.':'Pick a topic to watch the video and do the test.';
   filter=me.role==='student'?me.level:'All';
   await loadLessons();if(me.role==='admin'){await loadStudents();loadResults();loadHw()}
   show(me.role==='admin'?'vA':'vL');render();
@@ -214,8 +224,8 @@ function render(){
   document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{filter=b.dataset.c;render()});
   const list=lessons.map((l,i)=>({...l,n:i+1})).filter(l=>(ef==='All'||l.level===ef)&&((l.title||'')+(l.description||'')).toLowerCase().includes(q));
   $('empty').classList.toggle('hide',list.length>0);
-  $('grid').innerHTML=list.map(l=>`<div class="card" data-id="${l.id}"><div class="thumb"><span class="num">Lesson ${l.n}</span><video src="${esc(l.url)}#t=1" preload="metadata" muted></video><div class="play"><i>▶</i></div></div><div class="cb"><span class="tag">${esc(l.level)}</span><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div></div>`).join('');
-  document.querySelectorAll('.card').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP');openTest(l);openHw(l)});
+  $('grid').innerHTML=list.map(l=>`<div class="topic" data-id="${l.id}"><span class="tn">${l.n}</span><div><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div><span class="tag" style="margin:0">${esc(l.level)}</span><i>›</i></div>`).join('');
+  document.querySelectorAll('.topic[data-id]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP');openTest(l)});
   if(me&&me.role==='admin')fillLs();
   $('nL').textContent=lessons.length;$('nS').textContent=students.length;
   $('aList').innerHTML=lessons.length?lessons.map(l=>`<div class="row"><b>${esc(l.title)}</b><span class="tag" style="margin:0">${esc(l.level)}</span><button class="btn sm ghost" data-dl="${l.id}">Delete</button></div>`).join(''):'<div class="empty">No lessons yet.</div>';
@@ -315,11 +325,21 @@ async function loadHw(){
 $('hwList').addEventListener('click',async e=>{const id=e.target.dataset&&e.target.dataset.ck;if(!id)return;const c=e.target.closest('.qcard');e.target.disabled=true;
   const {error}=await sb.from('homework').update({status:'checked',grade:c.querySelector('.hg').value.trim()||null,feedback:c.querySelector('.hf').value.trim()||null,checked_at:new Date().toISOString()}).eq('id',id);
   if(error){alert(error.message);e.target.disabled=false;return}await loadHw()});
+/* ---- student: homework list ---- */
+async function renderHwList(){
+  const {data}=await sb.from('homework').select('lesson_id,status,grade,created_at').eq('student_id',me.id).order('created_at',{ascending:false});
+  const latest={};(data||[]).forEach(h=>{if(!latest[h.lesson_id])latest[h.lesson_id]=h});
+  const list=lessons.map((l,i)=>({...l,n:i+1})).filter(l=>l.homework_task);
+  $('hwTopics').innerHTML=list.length?list.map(l=>{const h=latest[l.id],st=!h?'To do':h.status==='checked'?'Checked'+(h.grade?' · '+esc(h.grade):''):'Waiting for check';
+    return `<div class="topic" data-hw="${l.id}"><span class="tn">${l.n}</span><div><h3>${esc(l.title)}</h3><p>${esc(l.homework_task)}</p></div><span class="tag" style="margin:0">${st}</span><i>›</i></div>`}).join(''):'<div class="empty">No homework yet.</div>';
+  document.querySelectorAll('[data-hw]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.hw);$('hwS1').classList.add('hide');$('hwS2').classList.remove('hide');openHw(l)})}
+function showHw(){show('vH');$('hwS1').classList.remove('hide');$('hwS2').classList.add('hide');renderHwList()}
+$('tH').onclick=showHw;$('hwBack').onclick=showHw;
 /* ---- student: send homework ---- */
-async function openHw(l){const box=$('hwBox');box.classList.add('hide');box.innerHTML='';
+async function openHw(l){const box=$('hwBox');box.innerHTML='';
   const {data:old}=await sb.from('homework').select('*').eq('lesson_id',l.id).order('created_at',{ascending:false});
   const mine=(old||[]).filter(h=>h.student_id===me.id);
-  box.innerHTML=`<h2 style="margin:6px 6px 0">Homework</h2><p style="margin:4px 6px 0;color:var(--mute);white-space:pre-wrap">${esc(l.homework_task||'Write your answer below or attach a file.')}</p>
+  box.innerHTML=`<h2 style="margin:6px 6px 0">Homework: ${esc(l.title)}</h2><p style="margin:4px 6px 0;color:var(--mute);white-space:pre-wrap">${esc(l.homework_task||'Write your answer below or attach a file.')}</p>
   <div style="padding:6px"><label>Your answer</label><textarea id="hwA" placeholder="Type your homework here…"></textarea><label>Attach a file (optional, up to 20 MB)</label><div class="drop"><input type="file" id="hwF"></div><button class="btn" id="hwS">Send homework</button><div id="hwR" style="margin-top:8px"></div></div>`
   +(mine.length?`<h3 style="margin:14px 6px 0">Your sent homework</h3>`+mine.map(h=>`<div class="qcard" style="margin:10px 6px"><span class="tag" style="margin:0">${h.status==='checked'?'Checked'+(h.grade?' · '+esc(h.grade):''):'Waiting for check'}</span> <small style="color:var(--mute)">${new Date(h.created_at).toLocaleString()}</small>${h.answer?`<p style="white-space:pre-wrap;margin:8px 0 0">${esc(h.answer)}</p>`:''}${h.feedback?`<p style="margin:8px 0 0"><b>Teacher:</b> ${esc(h.feedback)}</p>`:''}</div>`).join(''):'');
   box.classList.remove('hide');
