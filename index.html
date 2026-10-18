@@ -169,10 +169,73 @@ input[type=file]::file-selector-button:hover{transform:translateY(-2px)}
 .opt{border:1.5px solid transparent;transition:background .15s,border-color .15s}
 .opt:hover{background:color-mix(in srgb,var(--acc2) 10%,transparent);border-color:var(--line)}
 @media(hover:none){.btn:hover:not(:disabled),.chip:hover:not(:disabled),.pill:hover,.back:hover{transform:none}}
+
+/* ===== aesthetic upgrade ===== */
+html{scroll-behavior:smooth}
+::selection{background:color-mix(in srgb,var(--acc) 30%,transparent)}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes float{from{transform:translate(0,0) scale(1)}to{transform:translate(36px,46px) scale(1.12)}}
+.blob{position:fixed;border-radius:50%;filter:blur(70px);opacity:.32;z-index:-1;pointer-events:none;animation:float 14s ease-in-out infinite alternate}
+.b1{width:360px;height:360px;background:var(--acc);top:-100px;right:-80px}
+.b2{width:320px;height:320px;background:var(--acc2);bottom:-100px;left:-90px;animation-delay:-6s}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .blob{opacity:.16}}
+:root[data-theme="dark"] .blob{opacity:.16}
+/* floating glass header */
+header{position:sticky;top:10px;z-index:20;width:calc(100% - 24px);max-width:1080px;margin:12px auto 8px;padding:12px 20px;border:1px solid var(--line);border-radius:22px;background:color-mix(in srgb,var(--card) 72%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:var(--sh)}
+.logo b{box-shadow:0 8px 18px var(--glow);transition:transform .3s}
+.logo:hover b{transform:rotate(-8deg) scale(1.08)}
+/* login */
+.login h1 em{background:linear-gradient(120deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.perks{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.perks span{background:color-mix(in srgb,var(--card) 85%,transparent);border:1px solid var(--line);border-radius:99px;padding:9px 16px;font-weight:600;font-size:14px;box-shadow:0 6px 16px rgba(60,40,20,.06)}
+.box{position:relative;overflow:hidden;background:color-mix(in srgb,var(--card) 88%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.box::before,.panel::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.panel{position:relative;overflow:hidden}
+/* inputs */
+input[type=text],input[type=password],textarea,select{border-width:1.5px;border-radius:14px;transition:border-color .2s,box-shadow .2s}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 18%,transparent)}
+/* hero banner */
+#vL .hero{position:relative;overflow:hidden;color:#fff;border-radius:30px;padding:36px 34px;margin:10px 0 24px;background:linear-gradient(120deg,#c4552d 0%,#d9774a 48%,#2f5d62 125%);box-shadow:0 20px 44px rgba(196,85,45,.28)}
+#vL .hero::before{content:"";position:absolute;width:260px;height:260px;border-radius:50%;right:-60px;top:-90px;background:rgba(255,255,255,.14)}
+#vL .hero::after{content:"";position:absolute;width:160px;height:160px;border-radius:50%;right:120px;bottom:-90px;background:rgba(255,255,255,.1)}
+#vL .hero h1{color:#fff;position:relative}#vL .hero h1 em{color:#ffe7d8}#vL .hero p{color:rgba(255,255,255,.88);position:relative;margin-top:12px}
+/* lesson rows */
+.topic{position:relative;overflow:hidden}
+.topic::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:linear-gradient(var(--acc),var(--acc2));opacity:0;transition:opacity .2s}
+.topic:hover::before{opacity:1}
+.topic:hover{box-shadow:0 16px 36px rgba(60,40,20,.14)}
+.topic[data-hw]{margin-left:26px;border-style:dashed;background:color-mix(in srgb,var(--card) 70%,transparent)}
+.topic[data-hw]::before{opacity:1;background:var(--acc2)}
+.tn{box-shadow:0 8px 16px var(--glow)}
+.tag[data-l="0"]{--lc:#2e9e5b}.tag[data-l="1"]{--lc:#1f8f9d}.tag[data-l="2"]{--lc:#3f6fd1}.tag[data-l="3"]{--lc:#8a52c9}.tag[data-l="4"]{--lc:#c4552d}
+.tag[data-l]{color:var(--lc);background:color-mix(in srgb,var(--lc) 15%,transparent)}
+/* player + tests */
+.player{position:relative}
+.player video{box-shadow:0 22px 50px rgba(0,0,0,.28)}
+.qcard{background:color-mix(in srgb,var(--card) 55%,var(--bg));border-radius:18px}
+/* admin stats */
+.stat div{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:150px;box-shadow:var(--sh);color:var(--mute);font-weight:500}
+.stat i{font-style:normal;font-size:22px}
+.stat b{background:linear-gradient(120deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent;font-size:34px}
+.row{transition:background .15s}
+/* footer */
+.foot{text-align:center;color:var(--mute);font-size:13px;padding:6px 0 34px}
+/* entrance animations */
+.box,.panel,.player,#vL .hero,.perks,.stat div{animation:rise .55s cubic-bezier(.2,.7,.2,1) both}
+.topic{animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+.topic:nth-child(2){animation-delay:.05s}.topic:nth-child(3){animation-delay:.1s}.topic:nth-child(4){animation-delay:.15s}.topic:nth-child(5){animation-delay:.2s}.topic:nth-child(6){animation-delay:.25s}.topic:nth-child(n+7){animation-delay:.3s}
+@media(max-width:760px){
+  header{top:6px;width:calc(100% - 16px);margin:8px auto 6px;padding:10px 14px;border-radius:18px}
+  #vL .hero{padding:26px 22px;border-radius:24px}
+  .topic[data-hw]{margin-left:14px}
+  .stat div{min-width:0}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
 <body>
+<div class="blob b1"></div><div class="blob b2"></div>
 <header>
   <div class="logo"><b>N</b><div>Nurislam<span>Teaches</span></div></div>
   <div class="right"><nav id="nav" class="hide"><button id="tL" class="on">Lessons</button><button id="tA" class="hide">Admin</button></nav><button class="pill hide" id="out">Log out</button></div>
@@ -182,6 +245,7 @@ input[type=file]::file-selector-button:hover{transform:translateY(-2px)}
   <div>
     <h1>Learn English <em>with Nurislam.</em></h1>
     <p class="sub">Your personal video lessons, any time you want. Log in with the username and password from your teacher.</p>
+    <div class="perks"><span>🎬 Video lessons</span><span>✅ Quick tests</span><span>📝 Homework feedback</span></div>
   </div>
   <div class="box">
     <h2>Welcome back</h2><p style="color:var(--mute);margin:0 0 4px">Log in with your username and password.</p>
@@ -210,7 +274,7 @@ input[type=file]::file-selector-button:hover{transform:translateY(-2px)}
     <button class="back" id="hwBack">← All lessons</button><div class="player" id="hwBox"></div>
   </section>
   <section id="vA" class="hide">
-    <div class="stat"><div><b id="nL">0</b>lessons</div><div><b id="nS">0</b>students</div><div><b id="nH">0</b>homework to check</div></div>
+    <div class="stat"><div><i>🎬</i><b id="nL">0</b>lessons</div><div><i>🎓</i><b id="nS">0</b>students</div><div><i>📝</i><b id="nH">0</b>homework to check</div></div>
     <div class="panel">
       <h2>Add a student</h2><p style="color:var(--mute);margin:0">Create a username and password, then send them to your student.</p>
       <div class="two"><div><label>Full name</label><input type="text" id="sN"></div><div><label>Username</label><input type="text" id="sU" autocapitalize="off"></div></div>
@@ -240,6 +304,7 @@ input[type=file]::file-selector-button:hover{transform:translateY(-2px)}
     <div class="panel"><h2>Homework to check</h2><div id="hwList"></div></div>
   </section>
 </main>
+<footer class="foot">NurislamTeaches · keep learning ✨</footer>
 
 <script>
 /* ====== PUT YOUR SUPABASE DETAILS HERE ====== */
@@ -309,13 +374,13 @@ function render(){
   const list=lessons.map((l,i)=>({...l,n:i+1})).filter(l=>(ef==='All'||l.level===ef)&&((l.title||'')+(l.description||'')).toLowerCase().includes(q));
   $('empty').classList.toggle('hide',list.length>0);
   const hs=h=>!h?'To do':h.status==='checked'?'Checked'+(h.grade?' · '+esc(h.grade):''):'Waiting for check';
-  $('grid').innerHTML=list.map(l=>`<div class="topic" data-id="${l.id}"><span class="tn">${l.n}</span><div><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div><span class="tag" style="margin:0">${esc(l.level)}</span><i>›</i></div>`
+  $('grid').innerHTML=list.map(l=>`<div class="topic" data-id="${l.id}"><span class="tn">${l.n}</span><div><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><i>›</i></div>`
     +(!adm?`<div class="topic" data-hw="${l.id}"><span class="tn" style="background:var(--acc2);font-size:18px">📝</span><div><h3>${esc(l.title)} (Homework)</h3><p>${esc(l.homework_task||'Send your homework for this lesson')}</p></div><span class="tag" style="margin:0">${hs(myHw[l.id])}</span><i>›</i></div>`:'')).join('');
   document.querySelectorAll('[data-hw]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.hw);show('vH');openHw(l)});
   document.querySelectorAll('.topic[data-id]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP');openTest(l)});
   if(me&&me.role==='admin')fillLs();
   $('nL').textContent=lessons.length;$('nS').textContent=students.length;
-  $('aList').innerHTML=lessons.length?lessons.map(l=>`<div class="row"><b>${esc(l.title)}</b><span class="tag" style="margin:0">${esc(l.level)}</span><button class="btn sm ghost" data-dl="${l.id}">Delete</button></div>`).join(''):'<div class="empty">No lessons yet.</div>';
+  $('aList').innerHTML=lessons.length?lessons.map(l=>`<div class="row"><b>${esc(l.title)}</b><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><button class="btn sm ghost" data-dl="${l.id}">Delete</button></div>`).join(''):'<div class="empty">No lessons yet.</div>';
   document.querySelectorAll('[data-dl]').forEach(b=>b.onclick=async()=>{const l=lessons.find(x=>x.id===b.dataset.dl);if(!confirm('Delete "'+l.title+'"?'))return;
     await sb.storage.from('videos').remove([l.video_path]);const {error}=await sb.from('lessons').delete().eq('id',l.id);
     if(error)return alert(error.message);await loadLessons();render()});
