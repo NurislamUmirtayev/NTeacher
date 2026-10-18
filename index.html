@@ -117,6 +117,9 @@ img,video{max-width:100%}
 }
 @media(hover:none){.topic:hover,.card:hover{transform:none}}
 @media(min-width:1400px){header,main{max-width:1180px}}
+.levels{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 14px}
+.chip.locked{opacity:.45;cursor:not-allowed}
+@media(max-width:760px){.levels{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}.levels .chip{white-space:nowrap;flex:none}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
@@ -144,7 +147,8 @@ img,video{max-width:100%}
 <main id="app" class="hide">
   <section id="vL">
     <div class="hero"><h1>Hello, <em id="who">student</em> 👋</h1><p>Pick a lesson and press play.</p></div>
-    <div class="bar"><input type="text" id="q" placeholder="Search lessons…"><span id="chips" style="display:contents"></span></div>
+    <div id="chips" class="levels"></div>
+    <div class="bar"><input type="text" id="q" placeholder="Search lessons…"></div>
     <div id="grid" class="topics"></div>
     <div id="empty" class="empty hide">No lessons found.</div>
   </section>
@@ -229,7 +233,7 @@ async function start(adminOnly){
 async function enter(){
   $('login').classList.add('hide');$('app').classList.remove('hide');$('nav').classList.remove('hide');$('out').classList.remove('hide');
   $('tA').classList.toggle('hide',me.role!=='admin');$('who').textContent=me.full_name.split(' ')[0];
-  document.querySelector('.hero p').textContent=me.role==='student'?'Your level: '+me.level+'. Open a topic to watch the video and do the test, then open its Homework.':'Pick a topic to watch the video and do the test.';
+  document.querySelector('.hero p').textContent=me.role==='student'?'Your level: '+me.level+'. You can open your level and the levels below it. Open a topic to watch the video and do the test, then its Homework.':'Pick a topic to watch the video and do the test.';
   filter=me.role==='student'?me.level:'All';
   await loadLessons();await loadMyHw();if(me.role==='admin'){await loadStudents();loadHw()}
   show(me.role==='admin'?'vA':'vL');render();
@@ -250,8 +254,8 @@ async function loadStudents(){
   students=data||[];
 }
 function render(){
-  const adm=me&&me.role==='admin',ef=adm?filter:(me?me.level:'All'),lv=['All',...LEVELS],q=$('q').value.toLowerCase();
-  $('chips').innerHTML=!adm?'':lv.map(x=>`<button class="chip ${x===filter?'on':''}" data-c="${esc(x)}">${esc(x)}</button>`).join('');
+  const adm=me&&me.role==='admin',myR=me?LEVELS.indexOf(me.level):0,ef=adm?filter:(LEVELS.indexOf(filter)>=0&&LEVELS.indexOf(filter)<=myR?filter:(me?me.level:'All')),lv=adm?['All',...LEVELS]:LEVELS,q=$('q').value.toLowerCase();
+  $('chips').innerHTML=lv.map(x=>{const lock=!adm&&LEVELS.indexOf(x)>myR;return `<button class="chip ${x===ef?'on':''} ${lock?'locked':''}" data-c="${esc(x)}" ${lock?'disabled':''}>${lock?'🔒 ':''}${esc(x)}</button>`}).join('');
   document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{filter=b.dataset.c;render()});
   const list=lessons.map((l,i)=>({...l,n:i+1})).filter(l=>(ef==='All'||l.level===ef)&&((l.title||'')+(l.description||'')).toLowerCase().includes(q));
   $('empty').classList.toggle('hide',list.length>0);
