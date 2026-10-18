@@ -112,9 +112,10 @@ textarea{min-height:80px;resize:vertical}
     <button class="back" id="back">← All lessons</button>
     <div class="player"><video id="pv" controls playsinline controlsList="nodownload"></video><h2 id="pt"></h2><p id="pd"></p><span class="tag" id="pl" style="margin:8px 6px"></span></div>
     <div class="player hide" id="testBox" style="margin-top:20px"></div>
+    <div class="player hide" id="hwBox" style="margin-top:20px"></div>
   </section>
   <section id="vA" class="hide">
-    <div class="stat"><div><b id="nL">0</b>lessons</div><div><b id="nS">0</b>students</div></div>
+    <div class="stat"><div><b id="nL">0</b>lessons</div><div><b id="nS">0</b>students</div><div><b id="nH">0</b>homework to check</div></div>
     <div class="panel">
       <h2>Add a student</h2><p style="color:var(--mute);margin:0">Create a username and password, then send them to your student.</p>
       <div class="two"><div><label>Full name</label><input type="text" id="sN"></div><div><label>Username</label><input type="text" id="sU" autocapitalize="off"></div></div>
@@ -132,13 +133,17 @@ textarea{min-height:80px;resize:vertical}
       <button class="btn" id="aS">Upload lesson</button><div id="aM"></div>
     </div>
     <div class="panel"><h2>Your lessons</h2><div id="aList"></div></div>
-    <div class="panel"><h2>Lesson test</h2><p style="color:var(--mute);margin:0">Pick a lesson, add multiple-choice questions, tick the correct answer, and save. Saving replaces that lesson's old test.</p>
+    <div class="panel"><h2>Lesson test &amp; homework</h2><p style="color:var(--mute);margin:0">Pick a lesson, add multiple-choice questions, tick the correct answer, and save. Saving replaces that lesson's old test.</p>
       <label>Lesson</label><select id="tLs"></select>
       <div id="qb"></div>
       <button class="btn sm" id="addQ" type="button" style="background:var(--acc2);margin-top:12px">+ Add question</button>
       <button class="btn" id="saveT">Save test</button><div id="tM"></div>
+      <h3 style="margin:26px 0 4px">Homework task</h3><p style="color:var(--mute);margin:0">What should students do after this lesson? (Uses the lesson chosen above.)</p>
+      <textarea id="hwT" placeholder="e.g. Write 5 sentences using past simple and past perfect."></textarea>
+      <button class="btn" id="saveHw">Save homework task</button><div id="hwM"></div>
     </div>
     <div class="panel"><h2>Test results</h2><div id="rList"></div></div>
+    <div class="panel"><h2>Homework to check</h2><div id="hwList"></div></div>
   </section>
 </main>
 
@@ -157,7 +162,7 @@ const LEVELS=['Beginner','Elementary','Pre-Intermediate','Intermediate','Advance
 
 function show(v){['vL','vP','vA'].forEach(x=>$(x).classList.toggle('hide',x!==v));
   $('tL').classList.toggle('on',v!=='vA');$('tA').classList.toggle('on',v==='vA');
-  if(v!=='vP'){$('pv').pause();$('testBox').classList.add('hide')}scrollTo(0,0)}
+  if(v!=='vP'){$('pv').pause();$('testBox').classList.add('hide');$('hwBox').classList.add('hide')}scrollTo(0,0)}
 $('tL').onclick=()=>show('vL');$('tA').onclick=()=>show('vA');$('back').onclick=()=>show('vL');
 ['lu','lp'].forEach(i=>$(i).addEventListener('keydown',e=>{if(e.key==='Enter')$('lb').click()}));
 
@@ -185,7 +190,7 @@ async function enter(){
   $('tA').classList.toggle('hide',me.role!=='admin');$('who').textContent=me.full_name.split(' ')[0];
   document.querySelector('.hero p').textContent=me.role==='student'?'Your level: '+me.level+'. Pick a lesson and press play.':'Pick a lesson and press play.';
   filter=me.role==='student'?me.level:'All';
-  await loadLessons();if(me.role==='admin'){await loadStudents();loadResults()}
+  await loadLessons();if(me.role==='admin'){await loadStudents();loadResults();loadHw()}
   show(me.role==='admin'?'vA':'vL');render();
 }
 $('out').onclick=async()=>{await sb.auth.signOut();me=null;$('lp').value='';['app','nav','out'].forEach(x=>$(x).classList.add('hide'));$('login').classList.remove('hide');$('pv').pause()};
@@ -210,7 +215,7 @@ function render(){
   const list=lessons.map((l,i)=>({...l,n:i+1})).filter(l=>(ef==='All'||l.level===ef)&&((l.title||'')+(l.description||'')).toLowerCase().includes(q));
   $('empty').classList.toggle('hide',list.length>0);
   $('grid').innerHTML=list.map(l=>`<div class="card" data-id="${l.id}"><div class="thumb"><span class="num">Lesson ${l.n}</span><video src="${esc(l.url)}#t=1" preload="metadata" muted></video><div class="play"><i>▶</i></div></div><div class="cb"><span class="tag">${esc(l.level)}</span><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div></div>`).join('');
-  document.querySelectorAll('.card').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP');openTest(l)});
+  document.querySelectorAll('.card').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP');openTest(l);openHw(l)});
   if(me&&me.role==='admin')fillLs();
   $('nL').textContent=lessons.length;$('nS').textContent=students.length;
   $('aList').innerHTML=lessons.length?lessons.map(l=>`<div class="row"><b>${esc(l.title)}</b><span class="tag" style="margin:0">${esc(l.level)}</span><button class="btn sm ghost" data-dl="${l.id}">Delete</button></div>`).join(''):'<div class="empty">No lessons yet.</div>';
@@ -262,7 +267,7 @@ function qBlock(q){qn++;const n=qn,o=(q&&q.options)||[];
   return `<div class="qcard"><input type="text" class="qq" placeholder="Question" value="${esc(q?q.question:'')}">`+[0,1,2,3].map(i=>`<div class="opt" style="cursor:default"><input type="radio" name="c${n}" class="qc" value="${i}" ${q&&q.correct===i?'checked':''}><input type="text" class="qo" placeholder="Option ${'ABCD'[i]}" value="${esc(o[i]||'')}"></div>`).join('')+`<button class="btn sm ghost" type="button" data-rq style="margin-top:8px">Remove question</button></div>`}
 function fillLs(){const v=$('tLs').value;$('tLs').innerHTML=lessons.map(l=>`<option value="${l.id}">${esc(l.title)}</option>`).join('');
   if(v&&lessons.some(l=>l.id===v))$('tLs').value=v;else if(lessons.length&&!v)loadTest()}
-async function loadTest(){const id=$('tLs').value;$('qb').innerHTML='';if(!id)return;
+async function loadTest(){const id=$('tLs').value;$('qb').innerHTML='';const L=lessons.find(x=>x.id===id);$('hwT').value=(L&&L.homework_task)||'';if(!id)return;
   const {data:qs}=await sb.from('questions').select('*').eq('lesson_id',id).order('position');
   if(!qs||!qs.length)return;
   const {data:ks}=await sb.from('question_keys').select('*').in('question_id',qs.map(q=>q.id));
@@ -292,6 +297,43 @@ $('saveT').onclick=async()=>{const m=$('tM'),id=$('tLs').value;m.className='err'
 async function loadResults(){
   const {data}=await sb.from('results').select('score,total,created_at,profiles(full_name,username),lessons(title)').order('created_at',{ascending:false}).limit(50);
   $('rList').innerHTML=(data&&data.length)?data.map(r=>`<div class="row"><b>${esc(r.profiles&&r.profiles.full_name)}<br><small>${esc(r.lessons&&r.lessons.title)} · ${new Date(r.created_at).toLocaleDateString()}</small></b><span class="tag" style="margin:0">${r.score}/${r.total}</span></div>`).join(''):'<div class="empty">No test results yet.</div>'}
+/* ---- admin: homework task + checking ---- */
+$('saveHw').onclick=async()=>{const id=$('tLs').value,m=$('hwM');m.className='err';if(!id){m.textContent='Add a lesson first.';return}
+  const t=$('hwT').value.trim()||null;const {error}=await sb.from('lessons').update({homework_task:t}).eq('id',id);
+  if(error){m.textContent='Failed: '+error.message;return}
+  const L=lessons.find(x=>x.id===id);if(L)L.homework_task=t;m.className='ok';m.textContent='Homework task saved!'};
+async function loadHw(){
+  const {data}=await sb.from('homework').select('*,profiles(full_name,username),lessons(title)').order('created_at',{ascending:false}).limit(50);
+  const rows=data||[],paths=rows.filter(r=>r.file_path).map(r=>r.file_path),um={};
+  if(paths.length){const {data:u}=await sb.storage.from('homework').createSignedUrls(paths,7200);(u||[]).forEach(x=>um[x.path]=x.signedUrl)}
+  rows.sort((a,b)=>(a.status==='submitted'?0:1)-(b.status==='submitted'?0:1));
+  $('nH').textContent=rows.filter(r=>r.status==='submitted').length;
+  $('hwList').innerHTML=rows.length?rows.map(r=>`<div class="qcard" data-h="${r.id}"><b>${esc(r.profiles&&r.profiles.full_name)}</b> <small style="color:var(--mute)">· ${esc(r.lessons&&r.lessons.title)} · ${new Date(r.created_at).toLocaleString()}</small> <span class="tag" style="margin:0 0 0 8px">${r.status==='checked'?'Checked':'Waiting'}</span>`
+    +(r.answer?`<p style="white-space:pre-wrap;margin:8px 0">${esc(r.answer)}</p>`:'')
+    +(r.file_path?`<p style="margin:6px 0"><a href="${esc(um[r.file_path]||'#')}" target="_blank" rel="noopener" style="color:var(--acc)">📎 Open attached file</a></p>`:'')
+    +`<div class="two"><div><label>Grade</label><input type="text" class="hg" value="${esc(r.grade)}" placeholder="e.g. 8/10"></div><div></div></div><label>Feedback</label><textarea class="hf" placeholder="Write feedback for the student">${esc(r.feedback)}</textarea><button class="btn sm" data-ck="${r.id}" style="margin-top:10px">${r.status==='checked'?'Update':'Mark as checked'}</button></div>`).join(''):'<div class="empty">No homework yet.</div>'}
+$('hwList').addEventListener('click',async e=>{const id=e.target.dataset&&e.target.dataset.ck;if(!id)return;const c=e.target.closest('.qcard');e.target.disabled=true;
+  const {error}=await sb.from('homework').update({status:'checked',grade:c.querySelector('.hg').value.trim()||null,feedback:c.querySelector('.hf').value.trim()||null,checked_at:new Date().toISOString()}).eq('id',id);
+  if(error){alert(error.message);e.target.disabled=false;return}await loadHw()});
+/* ---- student: send homework ---- */
+async function openHw(l){const box=$('hwBox');box.classList.add('hide');box.innerHTML='';
+  const {data:old}=await sb.from('homework').select('*').eq('lesson_id',l.id).order('created_at',{ascending:false});
+  const mine=(old||[]).filter(h=>h.student_id===me.id);
+  box.innerHTML=`<h2 style="margin:6px 6px 0">Homework</h2><p style="margin:4px 6px 0;color:var(--mute);white-space:pre-wrap">${esc(l.homework_task||'Write your answer below or attach a file.')}</p>
+  <div style="padding:6px"><label>Your answer</label><textarea id="hwA" placeholder="Type your homework here…"></textarea><label>Attach a file (optional, up to 20 MB)</label><div class="drop"><input type="file" id="hwF"></div><button class="btn" id="hwS">Send homework</button><div id="hwR" style="margin-top:8px"></div></div>`
+  +(mine.length?`<h3 style="margin:14px 6px 0">Your sent homework</h3>`+mine.map(h=>`<div class="qcard" style="margin:10px 6px"><span class="tag" style="margin:0">${h.status==='checked'?'Checked'+(h.grade?' · '+esc(h.grade):''):'Waiting for check'}</span> <small style="color:var(--mute)">${new Date(h.created_at).toLocaleString()}</small>${h.answer?`<p style="white-space:pre-wrap;margin:8px 0 0">${esc(h.answer)}</p>`:''}${h.feedback?`<p style="margin:8px 0 0"><b>Teacher:</b> ${esc(h.feedback)}</p>`:''}</div>`).join(''):'');
+  box.classList.remove('hide');
+  $('hwS').onclick=async()=>{const a=$('hwA').value.trim(),f=$('hwF').files[0],r=$('hwR');r.className='err';
+    if(!a&&!f){r.textContent='Write your answer or attach a file.';return}
+    if(f&&f.size>20*1024*1024){r.textContent='The file is over 20 MB.';return}
+    $('hwS').disabled=true;r.className='ok';r.textContent='Sending…';
+    let path=null;
+    if(f){const ext=(f.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'')||'bin';path=me.id+'/'+crypto.randomUUID()+'.'+ext;
+      const up=await sb.storage.from('homework').upload(path,f,{contentType:f.type||'application/octet-stream'});
+      if(up.error){r.className='err';r.textContent='Upload failed: '+up.error.message;$('hwS').disabled=false;return}}
+    const {error}=await sb.from('homework').insert({lesson_id:l.id,answer:a||null,file_path:path});
+    if(error){r.className='err';r.textContent='Could not send: '+error.message;$('hwS').disabled=false;return}
+    await openHw(l);$('hwR').className='ok';$('hwR').textContent='Homework sent! Your teacher will check it.'}}
 /* ---- student: take the test ---- */
 async function openTest(l){const box=$('testBox');box.classList.add('hide');box.innerHTML='';
   const {data:qs}=await sb.from('questions').select('*').eq('lesson_id',l.id).order('position');
