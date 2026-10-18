@@ -71,6 +71,11 @@ textarea{min-height:80px;resize:vertical}
 .stat div{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 22px}.stat b{font:700 28px Fraunces,serif;display:block;color:var(--acc)}
 .empty{color:var(--mute);padding:26px 0}
 .cred{background:color-mix(in srgb,var(--acc2) 12%,transparent);border:1px solid var(--acc2);border-radius:14px;padding:12px 16px;margin-top:14px;font-size:14px}
+.qcard{border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin:12px 0;background:var(--bg)}
+.qcard input[type=text]{margin:4px 0}
+.opt{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;cursor:pointer;margin:2px 0}
+.opt input[type=radio]{width:auto;flex:none}
+.opt.good{background:color-mix(in srgb,#2e9e5b 24%,transparent)}.opt.bad{background:color-mix(in srgb,#c0392b 24%,transparent)}
 @media(max-width:760px){.login{grid-template-columns:1fr;gap:24px;padding-top:10px}.two{grid-template-columns:1fr}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -106,6 +111,7 @@ textarea{min-height:80px;resize:vertical}
   <section id="vP" class="hide">
     <button class="back" id="back">← All lessons</button>
     <div class="player"><video id="pv" controls playsinline controlsList="nodownload"></video><h2 id="pt"></h2><p id="pd"></p><span class="tag" id="pl" style="margin:8px 6px"></span></div>
+    <div class="player hide" id="testBox" style="margin-top:20px"></div>
   </section>
   <section id="vA" class="hide">
     <div class="stat"><div><b id="nL">0</b>lessons</div><div><b id="nS">0</b>students</div></div>
@@ -113,6 +119,7 @@ textarea{min-height:80px;resize:vertical}
       <h2>Add a student</h2><p style="color:var(--mute);margin:0">Create a username and password, then send them to your student.</p>
       <div class="two"><div><label>Full name</label><input type="text" id="sN"></div><div><label>Username</label><input type="text" id="sU" autocapitalize="off"></div></div>
       <label>Password</label><div style="display:flex;gap:8px"><input type="text" id="sP"><button class="btn sm" id="gen" type="button" style="background:var(--acc2)">Generate</button></div>
+      <label>English level</label><select id="sL"></select>
       <button class="btn" id="sB">Add student</button><div id="sM"></div>
     </div>
     <div class="panel"><h2>Students</h2><div id="sList"></div></div>
@@ -120,11 +127,18 @@ textarea{min-height:80px;resize:vertical}
       <h2>Add a lesson</h2>
       <label>Title</label><input type="text" id="aT" placeholder="e.g. Present Perfect">
       <label>Description</label><textarea id="aD" placeholder="What will students learn?"></textarea>
-      <div class="two"><div><label>Level</label><select id="aLv"><option>Beginner</option><option>Elementary</option><option selected>Intermediate</option><option>Upper-Intermediate</option><option>Advanced</option></select></div>
+      <div class="two"><div><label>Level</label><select id="aLv"></select></div>
       <div><label>Video (MP4, max 50 MB)</label><div class="drop"><input type="file" id="aF" accept="video/*"></div></div></div>
       <button class="btn" id="aS">Upload lesson</button><div id="aM"></div>
     </div>
     <div class="panel"><h2>Your lessons</h2><div id="aList"></div></div>
+    <div class="panel"><h2>Lesson test</h2><p style="color:var(--mute);margin:0">Pick a lesson, add multiple-choice questions, tick the correct answer, and save. Saving replaces that lesson's old test.</p>
+      <label>Lesson</label><select id="tLs"></select>
+      <div id="qb"></div>
+      <button class="btn sm" id="addQ" type="button" style="background:var(--acc2);margin-top:12px">+ Add question</button>
+      <button class="btn" id="saveT">Save test</button><div id="tM"></div>
+    </div>
+    <div class="panel"><h2>Test results</h2><div id="rList"></div></div>
   </section>
 </main>
 
@@ -138,10 +152,12 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const emailOf=u=>u.toLowerCase().trim()+'@nurislamteaches.app';
 let lessons=[],students=[],me=null,filter='All',mode='S';
+const LEVELS=['Beginner','Elementary','Pre-Intermediate','Intermediate','Advanced'];
+['aLv','sL'].forEach(id=>$(id).innerHTML=LEVELS.map(x=>`<option>${x}</option>`).join(''));$('aLv').value='Intermediate';
 
 function show(v){['vL','vP','vA'].forEach(x=>$(x).classList.toggle('hide',x!==v));
   $('tL').classList.toggle('on',v!=='vA');$('tA').classList.toggle('on',v==='vA');
-  if(v!=='vP')$('pv').pause();scrollTo(0,0)}
+  if(v!=='vP'){$('pv').pause();$('testBox').classList.add('hide')}scrollTo(0,0)}
 $('tL').onclick=()=>show('vL');$('tA').onclick=()=>show('vA');$('back').onclick=()=>show('vL');
 ['lu','lp'].forEach(i=>$(i).addEventListener('keydown',e=>{if(e.key==='Enter')$('lb').click()}));
 
@@ -167,7 +183,9 @@ async function start(adminOnly){
 async function enter(){
   $('login').classList.add('hide');$('app').classList.remove('hide');$('nav').classList.remove('hide');$('out').classList.remove('hide');
   $('tA').classList.toggle('hide',me.role!=='admin');$('who').textContent=me.full_name.split(' ')[0];
-  await loadLessons();if(me.role==='admin')await loadStudents();
+  document.querySelector('.hero p').textContent=me.role==='student'?'Your level: '+me.level+'. Pick a lesson and press play.':'Pick a lesson and press play.';
+  filter=me.role==='student'?me.level:'All';
+  await loadLessons();if(me.role==='admin'){await loadStudents();loadResults()}
   show(me.role==='admin'?'vA':'vL');render();
 }
 $('out').onclick=async()=>{await sb.auth.signOut();me=null;$('lp').value='';['app','nav','out'].forEach(x=>$(x).classList.add('hide'));$('login').classList.remove('hide');$('pv').pause()};
@@ -186,19 +204,20 @@ async function loadStudents(){
   students=data||[];
 }
 function render(){
-  const lv=['All',...new Set(lessons.map(l=>l.level))],q=$('q').value.toLowerCase();
-  $('chips').innerHTML=lv.map(x=>`<button class="chip ${x===filter?'on':''}" data-c="${esc(x)}">${esc(x)}</button>`).join('');
+  const adm=me&&me.role==='admin',ef=adm?filter:(me?me.level:'All'),lv=['All',...LEVELS],q=$('q').value.toLowerCase();
+  $('chips').innerHTML=!adm?'':lv.map(x=>`<button class="chip ${x===filter?'on':''}" data-c="${esc(x)}">${esc(x)}</button>`).join('');
   document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{filter=b.dataset.c;render()});
-  const list=lessons.map((l,i)=>({...l,n:i+1})).filter(l=>(filter==='All'||l.level===filter)&&((l.title||'')+(l.description||'')).toLowerCase().includes(q));
+  const list=lessons.map((l,i)=>({...l,n:i+1})).filter(l=>(ef==='All'||l.level===ef)&&((l.title||'')+(l.description||'')).toLowerCase().includes(q));
   $('empty').classList.toggle('hide',list.length>0);
   $('grid').innerHTML=list.map(l=>`<div class="card" data-id="${l.id}"><div class="thumb"><span class="num">Lesson ${l.n}</span><video src="${esc(l.url)}#t=1" preload="metadata" muted></video><div class="play"><i>▶</i></div></div><div class="cb"><span class="tag">${esc(l.level)}</span><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div></div>`).join('');
-  document.querySelectorAll('.card').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP')});
+  document.querySelectorAll('.card').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP');openTest(l)});
+  if(me&&me.role==='admin')fillLs();
   $('nL').textContent=lessons.length;$('nS').textContent=students.length;
   $('aList').innerHTML=lessons.length?lessons.map(l=>`<div class="row"><b>${esc(l.title)}</b><span class="tag" style="margin:0">${esc(l.level)}</span><button class="btn sm ghost" data-dl="${l.id}">Delete</button></div>`).join(''):'<div class="empty">No lessons yet.</div>';
   document.querySelectorAll('[data-dl]').forEach(b=>b.onclick=async()=>{const l=lessons.find(x=>x.id===b.dataset.dl);if(!confirm('Delete "'+l.title+'"?'))return;
     await sb.storage.from('videos').remove([l.video_path]);const {error}=await sb.from('lessons').delete().eq('id',l.id);
     if(error)return alert(error.message);await loadLessons();render()});
-  $('sList').innerHTML=students.length?students.map(s=>`<div class="row"><b>${esc(s.full_name)}<br><small>@${esc(s.username)} ${s.active?'':'· disabled'}</small></b><button class="btn sm ghost" data-ts="${s.id}">${s.active?'Disable':'Enable'}</button></div>`).join(''):'<div class="empty">No students yet.</div>';
+  $('sList').innerHTML=students.length?students.map(s=>`<div class="row"><b>${esc(s.full_name)}<br><small>@${esc(s.username)} ${s.active?'':'· disabled'}</small></b><select data-lv="${s.id}" style="width:auto;padding:7px 10px">${LEVELS.map(x=>`<option ${x===s.level?'selected':''}>${x}</option>`).join('')}</select><button class="btn sm ghost" data-ts="${s.id}">${s.active?'Disable':'Enable'}</button></div>`).join(''):'<div class="empty">No students yet.</div>';
   document.querySelectorAll('[data-ts]').forEach(b=>b.onclick=async()=>{const s=students.find(x=>x.id===b.dataset.ts);
     const {error}=await sb.from('profiles').update({active:!s.active}).eq('id',s.id);if(error)return alert(error.message);await loadStudents();render()});
 }
@@ -211,7 +230,7 @@ $('sB').onclick=async()=>{
   $('sB').disabled=true;
   // a separate, non-persistent client so the admin stays logged in
   const tmp=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
-  const {data,error}=await tmp.auth.signUp({email:emailOf(u),password:p,options:{data:{username:u,full_name:n}}});
+  const {data,error}=await tmp.auth.signUp({email:emailOf(u),password:p,options:{data:{username:u,full_name:n,level:$('sL').value}}});
   if(error||!data.user){m.className='err';m.textContent='Failed: '+(error?error.message:'unknown error');$('sB').disabled=false;return}
   const {error:e2}=await sb.from('profiles').update({active:true}).eq('id',data.user.id);
   $('sB').disabled=false;
@@ -233,6 +252,61 @@ $('aS').onclick=async()=>{
   $('aT').value=$('aD').value=$('aF').value='';m.textContent='Lesson added!';await loadLessons();render();
 };
 $('q').oninput=render;
+
+/* ---- admin: change student level ---- */
+document.addEventListener('change',async e=>{const id=e.target.dataset&&e.target.dataset.lv;if(!id)return;
+  const {error}=await sb.from('profiles').update({level:e.target.value}).eq('id',id);if(error)alert(error.message);else await loadStudents()});
+/* ---- admin: test builder ---- */
+let qn=0;
+function qBlock(q){qn++;const n=qn,o=(q&&q.options)||[];
+  return `<div class="qcard"><input type="text" class="qq" placeholder="Question" value="${esc(q?q.question:'')}">`+[0,1,2,3].map(i=>`<div class="opt" style="cursor:default"><input type="radio" name="c${n}" class="qc" value="${i}" ${q&&q.correct===i?'checked':''}><input type="text" class="qo" placeholder="Option ${'ABCD'[i]}" value="${esc(o[i]||'')}"></div>`).join('')+`<button class="btn sm ghost" type="button" data-rq style="margin-top:8px">Remove question</button></div>`}
+function fillLs(){const v=$('tLs').value;$('tLs').innerHTML=lessons.map(l=>`<option value="${l.id}">${esc(l.title)}</option>`).join('');
+  if(v&&lessons.some(l=>l.id===v))$('tLs').value=v;else if(lessons.length&&!v)loadTest()}
+async function loadTest(){const id=$('tLs').value;$('qb').innerHTML='';if(!id)return;
+  const {data:qs}=await sb.from('questions').select('*').eq('lesson_id',id).order('position');
+  if(!qs||!qs.length)return;
+  const {data:ks}=await sb.from('question_keys').select('*').in('question_id',qs.map(q=>q.id));
+  const km={};(ks||[]).forEach(k=>km[k.question_id]=k.correct);
+  $('qb').innerHTML=qs.map(q=>qBlock({...q,correct:km[q.id]})).join('')}
+$('tLs').onchange=loadTest;
+$('addQ').onclick=()=>$('qb').insertAdjacentHTML('beforeend',qBlock());
+$('qb').addEventListener('click',e=>{if(e.target.dataset.rq!==undefined)e.target.closest('.qcard').remove()});
+$('saveT').onclick=async()=>{const m=$('tM'),id=$('tLs').value;m.className='err';
+  if(!id){m.textContent='Add a lesson first.';return}
+  const items=[];
+  for(const b of document.querySelectorAll('#qb .qcard')){
+    const question=b.querySelector('.qq').value.trim(),opts=[...b.querySelectorAll('.qo')].map(x=>x.value.trim()),c=b.querySelector('.qc:checked');
+    if(!question){m.textContent='Every question needs text.';return}
+    if(opts.filter(Boolean).length<2){m.textContent='Each question needs at least 2 options.';return}
+    if(!c||!opts[+c.value]){m.textContent='Tick the correct answer for every question.';return}
+    const options=[],map={};opts.forEach((o,i)=>{if(o){map[i]=options.length;options.push(o)}});
+    items.push({question,options,correct:map[+c.value]})}
+  $('saveT').disabled=true;m.className='ok';m.textContent='Saving…';
+  let r=await sb.from('questions').delete().eq('lesson_id',id);
+  if(!r.error&&items.length){
+    r=await sb.from('questions').insert(items.map((x,i)=>({lesson_id:id,position:i,question:x.question,options:x.options}))).select();
+    if(!r.error)r=await sb.from('question_keys').insert(r.data.map(q=>({question_id:q.id,correct:items[q.position].correct})))}
+  $('saveT').disabled=false;
+  if(r.error){m.className='err';m.textContent='Failed: '+r.error.message;return}
+  m.textContent=items.length?'Test saved!':'Test removed.'};
+async function loadResults(){
+  const {data}=await sb.from('results').select('score,total,created_at,profiles(full_name,username),lessons(title)').order('created_at',{ascending:false}).limit(50);
+  $('rList').innerHTML=(data&&data.length)?data.map(r=>`<div class="row"><b>${esc(r.profiles&&r.profiles.full_name)}<br><small>${esc(r.lessons&&r.lessons.title)} · ${new Date(r.created_at).toLocaleDateString()}</small></b><span class="tag" style="margin:0">${r.score}/${r.total}</span></div>`).join(''):'<div class="empty">No test results yet.</div>'}
+/* ---- student: take the test ---- */
+async function openTest(l){const box=$('testBox');box.classList.add('hide');box.innerHTML='';
+  const {data:qs}=await sb.from('questions').select('*').eq('lesson_id',l.id).order('position');
+  if(!qs||!qs.length)return;
+  box.innerHTML=`<h2 style="margin:6px 6px 0">Test: ${esc(l.title)}</h2><p style="margin:4px 6px 0;color:var(--mute)">Answer every question, then press Submit.</p>`+qs.map((q,i)=>`<div class="qcard" data-q="${q.id}"><b>${i+1}. ${esc(q.question)}</b>`+q.options.map((o,j)=>`<label class="opt" data-j="${j}"><input type="radio" name="q${q.id}" value="${j}">${esc(o)}</label>`).join('')+`</div>`).join('')+`<button class="btn" id="subT" style="margin:6px;width:calc(100% - 12px)">Submit answers</button><div id="tRes" style="margin:6px"></div>`;
+  box.classList.remove('hide');
+  $('subT').onclick=async()=>{const ans={};let miss=false;
+    qs.forEach(q=>{const c=box.querySelector(`input[name="q${q.id}"]:checked`);if(c)ans[q.id]=+c.value;else miss=true});
+    if(miss){$('tRes').className='err';$('tRes').textContent='Please answer every question.';return}
+    $('subT').disabled=true;
+    const {data,error}=await sb.rpc('submit_test',{p_lesson:l.id,p_answers:ans});
+    $('subT').disabled=false;
+    if(error){$('tRes').className='err';$('tRes').textContent='Could not submit: '+error.message;return}
+    box.querySelectorAll('.qcard').forEach(c=>{const id=c.dataset.q,right=data.correct[id];c.querySelectorAll('.opt').forEach(o=>{const j=+o.dataset.j;o.classList.remove('good','bad');if(j===right)o.classList.add('good');else if(j===ans[id])o.classList.add('bad')})});
+    $('tRes').className='ok';$('tRes').style.fontSize='18px';$('tRes').textContent='Your score: '+data.score+' / '+data.total}}
 sb.auth.getSession().then(({data})=>{if(data.session)start()});
 </script>
 </body>
