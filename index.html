@@ -223,7 +223,7 @@ function render(){
   $('empty').classList.toggle('hide',list.length>0);
   const hs=h=>!h?'To do':h.status==='checked'?'Checked'+(h.grade?' · '+esc(h.grade):''):'Waiting for check';
   $('grid').innerHTML=list.map(l=>`<div class="topic" data-id="${l.id}"><span class="tn">${l.n}</span><div><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div><span class="tag" style="margin:0">${esc(l.level)}</span><i>›</i></div>`
-    +(!adm&&l.homework_task?`<div class="topic" data-hw="${l.id}"><span class="tn" style="background:var(--acc2);font-size:18px">📝</span><div><h3>${esc(l.title)}: Homework</h3><p>${esc(l.homework_task)}</p></div><span class="tag" style="margin:0">${hs(myHw[l.id])}</span><i>›</i></div>`:'')).join('');
+    +(!adm?`<div class="topic" data-hw="${l.id}"><span class="tn" style="background:var(--acc2);font-size:18px">📝</span><div><h3>${esc(l.title)} (Homework)</h3><p>${esc(l.homework_task||'Send your homework for this lesson')}</p></div><span class="tag" style="margin:0">${hs(myHw[l.id])}</span><i>›</i></div>`:'')).join('');
   document.querySelectorAll('[data-hw]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.hw);show('vH');openHw(l)});
   document.querySelectorAll('.topic[data-id]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP');openTest(l)});
   if(me&&me.role==='admin')fillLs();
