@@ -84,6 +84,11 @@ textarea{min-height:80px;resize:vertical}
 .topic i{font-style:normal;color:var(--mute);font-size:26px}
 @media(max-width:760px){.login{grid-template-columns:1fr;gap:24px;padding-top:10px}.two{grid-template-columns:1fr}}
 
+/* Homework item card styling */
+.topic.hw-card{border-left:4px solid var(--line);background:color-mix(in srgb, var(--card) 92%, var(--bg));}
+.topic.hw-card.checked{border-left-color:#2e9e5b;}
+.topic.hw-card.checking{border-left-color:#2f5d62;}
+
 /* ===== responsive: phones, tablets, laptops ===== */
 html{-webkit-text-size-adjust:100%}
 img,video{max-width:100%}
@@ -346,19 +351,14 @@ const MAXMB=2048,LEVELS=['Beginner','Elementary','Pre-Intermediate','Intermediat
 const GROUPS=Array.from({length:31},(_,i)=>'Junior '+(i+1));
 $('sG').innerHTML='<option value="">No group</option>'+GROUPS.map(x=>`<option>${x}</option>`).join('');
 
-function show(v){['vL','vP','vH','vB','vA'].forEach(x=>$(x).classList.toggle('hide',x!==v));
-  $('tL').classList.toggle('on',v==='vL'||v==='vP'||v==='vH');$('tB').classList.toggle('on',v==='vB');$('tA').classList.toggle('on',v==='vA');
-  if(v!=='vP'){$('pv').pause();$('testBox').classList.add('hide')}scrollTo(0,0)}
-$('tL').onclick=()=>show('vL');$('tA').onclick=()=>show('vA');$('back').onclick=()=>show('vL');
+function show(v){['vL','vP','vH','vB','vA'].forEach(x=>$(x).classList.toggle('hide',x!==v));$('tL').classList.toggle('on',v==='vL'||v==='vP'||v==='vH');$('tB').classList.toggle('on',v==='vB');$('tA').classList.toggle('on',v==='vA');
+  if(v!=='vP'){$('pv').pause();$('testBox').classList.add('hide')}scrollTo(0,0)}$('tL').onclick=()=>show('vL');$('tA').onclick=()=>show('vA');$('back').onclick=()=>show('vL');
 ['lu','lp'].forEach(i=>$(i).addEventListener('keydown',e=>{if(e.key==='Enter')$('lb').click()}));
 
 function setMode(m){mode=m;$('mS').classList.toggle('on',m==='S');$('mA').classList.toggle('on',m==='A');$('le').textContent='';
-  $('lu').placeholder=m==='A'?'Admin username':'';}
-$('mS').onclick=()=>setMode('S');$('mA').onclick=()=>setMode('A');
-$('lb').onclick=async()=>{
+  $('lu').placeholder=m==='A'?'Admin username':'';}$('mS').onclick=()=>setMode('S');$('mA').onclick=()=>setMode('A');$('lb').onclick=async()=>{
   const u=$('lu').value.trim(),p=$('lp').value;$('le').textContent='';
-  if(!u||!p){$('le').textContent='Enter your username and password.';return}
-  $('lb').disabled=true;
+  if(!u||!p){$('le').textContent='Enter your username and password.';return}$('lb').disabled=true;
   const {error}=await sb.auth.signInWithPassword({email:emailOf(u),password:p});
   $('lb').disabled=false;
   if(error){$('le').textContent='Wrong username or password.';return}
@@ -396,14 +396,40 @@ async function loadStudents(){
   const {data:l}=await sb.rpc('leaderboard');xpMap={};(l||[]).forEach(r=>xpMap[r.id]=r.xp);
 }
 function render(){
-  const adm=me&&me.role==='admin',myR=me?LEVELS.indexOf(me.level):0,ef=adm?filter:(LEVELS.indexOf(filter)>=0&&LEVELS.indexOf(filter)<=myR?filter:(me?me.level:'All')),lv=adm?['All',...LEVELS]:LEVELS,q=$('q').value.toLowerCase();
-  $('chips').innerHTML=lv.map(x=>{const lock=!adm&&LEVELS.indexOf(x)>myR;return `<button class="chip ${x===ef?'on':''} ${lock?'locked':''}" data-c="${esc(x)}" ${lock?'disabled':''}>${lock?'🔒 ':''}${esc(x)}</button>`}).join('');
+  const adm=me&&me.role==='admin',myR=me?LEVELS.indexOf(me.level):0,ef=adm?filter:(LEVELS.indexOf(filter)>=0&&LEVELS.indexOf(filter)<=myR?filter:(me?me.level:'All')),lv=adm?['All',...LEVELS]:LEVELS,q=$('q').value.toLowerCase();$('chips').innerHTML=lv.map(x=>{const lock=!adm&&LEVELS.indexOf(x)>myR;return `<button class="chip ${x===ef?'on':''} ${lock?'locked':''}" data-c="${esc(x)}" ${lock?'disabled':''}>${lock?'🔒 ':''}${esc(x)}</button>`}).join('');
   document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{filter=b.dataset.c;render()});
-  const list=lessons.map((l,i)=>({...l,n:i+1})).filter(l=>(ef==='All'||l.level===ef)&&((l.title||'')+(l.description||'')).toLowerCase().includes(q));
-  $('empty').classList.toggle('hide',list.length>0);
-  const hs=h=>!h?'To do':h.status==='checked'?'Checked'+(h.grade?' · '+esc(h.grade):''):'Waiting for check';
-  $('grid').innerHTML=list.map(l=>`<div class="topic" data-id="${l.id}"><span class="tn">${l.n}</span><div><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><i>›</i></div>`).join('');
-  document.querySelectorAll('.topic[data-id]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP');openLesson(l)});
+  const rawList=lessons.map((l,i)=>({...l,n:i+1})).filter(l=>(ef==='All'||l.level===ef)&&((l.title||'')+(l.description||'')).toLowerCase().includes(q));
+  
+  // Build rendered list items including homework card right after each lesson
+  let listHtml='';
+  rawList.forEach((l)=>{
+    // Lesson card
+    listHtml+=`<div class="topic" data-id="${l.id}"><span class="tn">${l.n}</span><div><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><i>›</i></div>`;
+    // Homework card right after the lesson
+    if(!adm){
+      const hw=myHw[l.id];
+      let hwClass='';
+      let hwText='Homework (Not submitted)';
+      if(hw){
+        if(hw.status==='checked'){
+          hwClass='checked';
+          hwText=`${esc(l.title)} (homework) — Checked${hw.grade?' · '+esc(hw.grade):''}`;
+        }else{
+          hwClass='checking';
+          hwText=`${esc(l.title)} (homework) — Being checked`;
+        }
+      }else{
+        hwText=`${esc(l.title)} (homework)`;
+      }
+      listHtml+=`<div class="topic hw-card ${hwClass}" data-hwid="${l.id}"><span class="tn" style="background:var(--acc2);font-size:15px">📝</span><div><h3>${esc(hwText)}</h3><p>${hw? (hw.status==='checked'?'Your teacher reviewed your homework.':'Your submission is waiting for review.'):'Click to submit or view homework task.'}</p></div><span class="tag" style="margin:0">Homework</span><i>›</i></div>`;
+    }
+  });
+
+  $('empty').classList.toggle('hide',rawList.length>0);$('grid').innerHTML=listHtml||'<div class="empty">No lessons found.</div>';
+
+  document.querySelectorAll('.topic[data-id]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description\vert{}\vert{}'';$('pl').textContent=l.level;show('vP');openLesson(l)});
+  document.querySelectorAll('.topic[data-hwid]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.hwid);show('vH');openHw(l)});
+
   if(me&&me.role==='admin')fillLs();
   $('nL').textContent=lessons.length;$('nS').textContent=students.length;
   $('aList').innerHTML=lessons.length?lessons.map(l=>`<div class="row"><b>${esc(l.title)}</b><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><button class="btn sm ghost" data-dl="${l.id}">Delete</button></div>`).join(''):'<div class="empty">No lessons yet.</div>';
@@ -416,12 +442,10 @@ function render(){
 }
 $('q').oninput=render;
 
-$('gen').onclick=()=>{const w=['sun','moon','star','river','tiger','maple','cloud','pearl','eagle','lemon'];$('sP').value=w[Math.random()*10|0]+w[Math.random()*10|0]+(100+Math.random()*900|0)};
-$('sB').onclick=async()=>{
+$('gen').onclick=()=>{const w=['sun','moon','star','river','tiger','maple','cloud','pearl','eagle','lemon'];$('sP').value=w[Math.random()*10\vert{}0]+w[Math.random()*10\vert{}0]+(100+Math.random()*900\vert{}0)};$('sB').onclick=async()=>{
   const n=$('sN').value.trim(),u=$('sU').value.trim().toLowerCase().replace(/[^a-z0-9._-]/g,''),p=$('sP').value,m=$('sM');
   if(!n||!u||p.length<6){m.className='err';m.textContent='Fill in name, username and a password (6+ characters).';return}
   $('sB').disabled=true;
-  // a separate, non-persistent client so the admin stays logged in
   const tmp=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
   const {data,error}=await tmp.auth.signUp({email:emailOf(u),password:p,options:{data:{username:u,full_name:n,level:$('sL').value,group:$('sG').value}}});
   if(error||!data.user){m.className='err';m.textContent='Failed: '+(error?error.message:'unknown error');$('sB').disabled=false;return}
@@ -438,13 +462,12 @@ $('aS').onclick=async()=>{
   b.disabled=true;m.className='ok';m.textContent='Uploading… big videos can take several minutes. Keep this page open.';
   const path=crypto.randomUUID()+'.mp4';
   const up=await sb.storage.from('videos').upload(path,f,{contentType:f.type||'video/mp4'});
-  if(up.error){m.className='err';m.textContent='Upload failed: '+up.error.message+(/size|exceed|large|413|payload/i.test(up.error.message)?' — The Supabase Storage project/bucket file-size limit may be lower than 2 GB. Raise it in Supabase Dashboard → Storage → Settings, and check your plan limit.':'');b.disabled=false;return}
+  if(up.error){m.className='err';m.textContent='Upload failed: '+up.error.message;b.disabled=false;return}
   const {error}=await sb.from('lessons').insert({title:t,description:$('aD').value.trim(),level:$('aLv').value,video_path:path});
   b.disabled=false;
   if(error){m.className='err';m.textContent='Failed: '+error.message;return}
   $('aT').value=$('aD').value=$('aF').value='';m.textContent='Lesson added!';await loadLessons();render();
 };
-$('q').oninput=render;
 
 /* ---- admin: change student level ---- */
 document.addEventListener('change',async e=>{const d=e.target.dataset||{};
@@ -468,11 +491,9 @@ async function loadTest(){const id=$('tLs').value;$('qb').innerHTML='';const L=l
   if(!qs||!qs.length)return;
   const {data:ks}=await sb.from('question_keys').select('*').in('question_id',qs.map(q=>q.id));
   const km={};(ks||[]).forEach(k=>km[k.question_id]=k.correct);
-  $('qb').innerHTML=qs.map(q=>qBlock({...q,correct:km[q.id]})).join('')}
-$('tLs').onchange=loadTest;
+  $('qb').innerHTML=qs.map(q=>qBlock({...q,correct:km[q.id]})).join('')}$('tLs').onchange=loadTest;
 $('addQ').onclick=()=>$('qb').insertAdjacentHTML('beforeend',qBlock());
-$('qb').addEventListener('click',e=>{if(e.target.dataset.rq!==undefined)e.target.closest('.qcard').remove()});
-$('saveT').onclick=async()=>{const m=$('tM'),id=$('tLs').value;m.className='err';
+$('qb').addEventListener('click',e=>{if(e.target.dataset.rq!==undefined)e.target.closest('.qcard').remove()});$('saveT').onclick=async()=>{const m=$('tM'),id=$('tLs').value;m.className='err';
   if(!id){m.textContent='Add a lesson first.';return}
   const items=[];
   for(const b of document.querySelectorAll('#qb .qcard')){
@@ -563,8 +584,7 @@ async function loadXpHistory(){
     </div>`;
   }).join('');
 }
-$('tB').onclick=async()=>{show('vB');await loadLb()};
-$('lbTabs').addEventListener('click',e=>{const t=e.target.dataset&&e.target.dataset.t;if(!t)return;lbTab=t;
+$('tB').onclick=async()=>{show('vB');await loadLb()};$('lbTabs').addEventListener('click',e=>{const t=e.target.dataset&&e.target.dataset.t;if(!t)return;lbTab=t;
   document.querySelectorAll('#lbTabs .chip').forEach(b=>b.classList.toggle('on',b.dataset.t===t));renderLb()});
 function renderLb(){
   const medal=i=>['🥇','🥈','🥉'][i]||(i+1),isS=me.role==='student',myIdx=lb.findIndex(r=>r.id===me.id);
@@ -589,13 +609,12 @@ function renderFlow(l,hasQ,done){const f=$('flow');
   if(!done){f.innerHTML=`<button class="btn" disabled>🔒 Watch the whole video to unlock the ${hasQ?'test':'homework'}</button>`;return}
   if(hasQ){f.innerHTML='<button class="btn" id="startT">▶ Start test</button>';
     $('startT').onclick=()=>{$('testBox').classList.remove('hide');f.innerHTML='';$('testBox').scrollIntoView({behavior:'smooth',block:'start'})}}
-  else{f.innerHTML='<button class="btn" id="goHw">📝 Go to homework</button>';$('goHw').onclick=()=>{show('vH');openHw(l)}}}
+  else{f.innerHTML='<button class="btn" id="goHw">📝 Go to homework</button>';$('goHw',)=>();show('vH');openHw(l)}}
 async function openLesson(l){
   const v=$('pv'),adm=me.role==='admin';maxT=0;v.playbackRate=1;
   $('testBox').classList.add('hide');$('testBox').innerHTML='';$('flow').innerHTML='';
   const hasQ=await prepTest(l);
   renderFlow(l,hasQ,adm||isWatched(l));
-  // students: no speeding up, no skipping ahead until the video has been watched once
   v.onratechange=()=>{if(!adm&&v.playbackRate!==1)v.playbackRate=1};
   v.onseeking=()=>{if(!adm&&!isWatched(l)&&v.currentTime>maxT+1.5)v.currentTime=maxT};
   v.ontimeupdate=()=>{if(v.currentTime>maxT&&v.currentTime<maxT+2)maxT=v.currentTime};
@@ -607,8 +626,7 @@ async function prepTest(l){const box=$('testBox');box.classList.add('hide');box.
   box.innerHTML=`<h2 style="margin:6px 6px 0">Test: ${esc(l.title)}</h2><p style="margin:4px 6px 0;color:var(--mute)">Answer every question, then press Submit. Perfect score = 30 XP, each mistake = −3 XP.</p>`+qs.map((q,i)=>`<div class="qcard" data-q="${q.id}"><b>${i+1}. ${esc(q.question)}</b>`+q.options.map((o,j)=>`<label class="opt" data-j="${j}"><input type="radio" name="q${q.id}" value="${j}">${esc(o)}</label>`).join('')+`</div>`).join('')+`<button class="btn" id="subT" style="margin:6px;width:calc(100% - 12px)">Submit answers</button><div id="tRes" style="margin:6px"></div>`;
   $('subT').onclick=async()=>{const ans={};let miss=false;
     qs.forEach(q=>{const c=box.querySelector(`input[name="q${q.id}"]:checked`);if(c)ans[q.id]=+c.value;else miss=true});
-    if(miss){$('tRes').className='err';$('tRes').textContent='Please answer every question.';return}
-    $('subT').disabled=true;
+    if(miss){$('tRes').className='err';$('tRes').textContent='Please answer every question.';return}$('subT').disabled=true;
     const {data,error}=await sb.rpc('submit_test',{p_lesson:l.id,p_answers:ans});
     $('subT').disabled=false;
     if(error){$('tRes').className='err';$('tRes').textContent='Could not submit: '+error.message;return}
