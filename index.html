@@ -267,7 +267,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc);box
   </section>
   <section id="vP" class="hide">
     <button class="back" id="back">← All lessons</button>
-    <div class="player"><video id="pv" controls playsinline controlsList="nodownload"></video><h2 id="pt"></h2><p id="pd"></p><span class="tag" id="pl" style="margin:8px 6px"></span></div>
+    <div class="player"><video id="pv" controls playsinline controlsList="nodownload noplaybackrate" disablePictureInPicture></video><h2 id="pt"></h2><p id="pd"></p><span class="tag" id="pl" style="margin:8px 6px"></span><div id="flow" style="margin:12px 6px 6px"></div></div>
     <div class="player hide" id="testBox" style="margin-top:20px"></div>
   </section>
   <section id="vH" class="hide">
@@ -288,7 +288,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc);box
       <label>Title</label><input type="text" id="aT" placeholder="e.g. Present Perfect">
       <label>Description</label><textarea id="aD" placeholder="What will students learn?"></textarea>
       <div class="two"><div><label>Level</label><select id="aLv"></select></div>
-      <div><label>Video (MP4, max 50 MB)</label><div class="drop"><input type="file" id="aF" accept="video/*"></div></div></div>
+      <div><label>Video (MP4, up to 500 MB)</label><div class="drop"><input type="file" id="aF" accept="video/*"></div></div></div>
       <button class="btn" id="aS">Upload lesson</button><div id="aM"></div>
     </div>
     <div class="panel"><h2>Your lessons</h2><div id="aList"></div></div>
@@ -316,7 +316,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const emailOf=u=>u.toLowerCase().trim()+'@nurislamteaches.app';
 let lessons=[],students=[],me=null,filter='All',mode='S',myHw={};
-const LEVELS=['Beginner','Elementary','Pre-Intermediate','Intermediate','Advanced'];
+const MAXMB=500,LEVELS=['Beginner','Elementary','Pre-Intermediate','Intermediate','Advanced'];
 ['aLv','sL'].forEach(id=>$(id).innerHTML=LEVELS.map(x=>`<option>${x}</option>`).join(''));$('aLv').value='Intermediate';
 
 function show(v){['vL','vP','vH','vA'].forEach(x=>$(x).classList.toggle('hide',x!==v));
@@ -377,7 +377,7 @@ function render(){
   $('grid').innerHTML=list.map(l=>`<div class="topic" data-id="${l.id}"><span class="tn">${l.n}</span><div><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><i>›</i></div>`
     +(!adm?`<div class="topic" data-hw="${l.id}"><span class="tn" style="background:var(--acc2);font-size:18px">📝</span><div><h3>${esc(l.title)} (Homework)</h3><p>${esc(l.homework_task||'Send your homework for this lesson')}</p></div><span class="tag" style="margin:0">${hs(myHw[l.id])}</span><i>›</i></div>`:'')).join('');
   document.querySelectorAll('[data-hw]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.hw);show('vH');openHw(l)});
-  document.querySelectorAll('.topic[data-id]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP');openTest(l)});
+  document.querySelectorAll('.topic[data-id]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP');openLesson(l)});
   if(me&&me.role==='admin')fillLs();
   $('nL').textContent=lessons.length;$('nS').textContent=students.length;
   $('aList').innerHTML=lessons.length?lessons.map(l=>`<div class="row"><b>${esc(l.title)}</b><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><button class="btn sm ghost" data-dl="${l.id}">Delete</button></div>`).join(''):'<div class="empty">No lessons yet.</div>';
@@ -408,11 +408,11 @@ $('sB').onclick=async()=>{
 $('aS').onclick=async()=>{
   const f=$('aF').files[0],t=$('aT').value.trim(),m=$('aM'),b=$('aS');m.className='err';
   if(!t||!f){m.textContent='Add a title and choose a video.';return}
-  if(f.size>50*1024*1024){m.textContent='Video is over 50 MB. Compress it first.';return}
-  b.disabled=true;m.className='ok';m.textContent='Uploading… please wait.';
+  if(f.size>MAXMB*1024*1024){m.textContent='Video is over '+MAXMB+' MB. Compress it first.';return}
+  b.disabled=true;m.className='ok';m.textContent='Uploading… big videos can take several minutes. Keep this page open.';
   const path=crypto.randomUUID()+'.mp4';
   const up=await sb.storage.from('videos').upload(path,f,{contentType:f.type||'video/mp4'});
-  if(up.error){m.className='err';m.textContent='Upload failed: '+up.error.message;b.disabled=false;return}
+  if(up.error){m.className='err';m.textContent='Upload failed: '+up.error.message+(/size|exceed|large|413/i.test(up.error.message)?' — Supabase\'s free plan allows only 50 MB per file. Compress the video, or upgrade Supabase to Pro and raise the Global file size limit in Storage settings.':'');b.disabled=false;return}
   const {error}=await sb.from('lessons').insert({title:t,description:$('aD').value.trim(),level:$('aLv').value,video_path:path});
   b.disabled=false;
   if(error){m.className='err';m.textContent='Failed: '+error.message;return}
@@ -498,12 +498,31 @@ async function openHw(l){const box=$('hwBox');box.innerHTML='';
     const {error}=await sb.from('homework').insert({lesson_id:l.id,answer:a||null,file_path:path});
     if(error){r.className='err';r.textContent='Could not send: '+error.message;$('hwS').disabled=false;return}
     await loadMyHw();render();await openHw(l);$('hwR').className='ok';$('hwR').textContent='Homework sent! Your teacher will check it.'}}
+/* ---- lesson flow: watch -> start test -> homework ---- */
+let maxT=0;
+const wkey=l=>'nt-watched:'+(me?me.id:'')+':'+l.id;
+function isWatched(l){try{return localStorage.getItem(wkey(l))==='1'}catch(e){return false}}
+function markWatched(l){try{localStorage.setItem(wkey(l),'1')}catch(e){}}
+function renderFlow(l,hasQ,done){const f=$('flow');
+  if(!done){f.innerHTML=`<button class="btn" disabled>🔒 Watch the whole video to unlock the ${hasQ?'test':'homework'}</button>`;return}
+  if(hasQ){f.innerHTML='<button class="btn" id="startT">▶ Start test</button>';
+    $('startT').onclick=()=>{$('testBox').classList.remove('hide');f.innerHTML='';$('testBox').scrollIntoView({behavior:'smooth',block:'start'})}}
+  else{f.innerHTML='<button class="btn" id="goHw">📝 Go to homework</button>';$('goHw').onclick=()=>{show('vH');openHw(l)}}}
+async function openLesson(l){
+  const v=$('pv'),adm=me.role==='admin';maxT=0;v.playbackRate=1;
+  $('testBox').classList.add('hide');$('testBox').innerHTML='';$('flow').innerHTML='';
+  const hasQ=await prepTest(l);
+  renderFlow(l,hasQ,adm||isWatched(l));
+  // students: no speeding up, no skipping ahead until the video has been watched once
+  v.onratechange=()=>{if(!adm&&v.playbackRate!==1)v.playbackRate=1};
+  v.onseeking=()=>{if(!adm&&!isWatched(l)&&v.currentTime>maxT+1.5)v.currentTime=maxT};
+  v.ontimeupdate=()=>{if(v.currentTime>maxT&&v.currentTime<maxT+2)maxT=v.currentTime};
+  v.onended=()=>{if(!adm)markWatched(l);renderFlow(l,hasQ,true)}}
 /* ---- student: take the test ---- */
-async function openTest(l){const box=$('testBox');box.classList.add('hide');box.innerHTML='';
+async function prepTest(l){const box=$('testBox');box.classList.add('hide');box.innerHTML='';
   const {data:qs}=await sb.from('questions').select('*').eq('lesson_id',l.id).order('position');
-  if(!qs||!qs.length)return;
+  if(!qs||!qs.length)return false;
   box.innerHTML=`<h2 style="margin:6px 6px 0">Test: ${esc(l.title)}</h2><p style="margin:4px 6px 0;color:var(--mute)">Answer every question, then press Submit.</p>`+qs.map((q,i)=>`<div class="qcard" data-q="${q.id}"><b>${i+1}. ${esc(q.question)}</b>`+q.options.map((o,j)=>`<label class="opt" data-j="${j}"><input type="radio" name="q${q.id}" value="${j}">${esc(o)}</label>`).join('')+`</div>`).join('')+`<button class="btn" id="subT" style="margin:6px;width:calc(100% - 12px)">Submit answers</button><div id="tRes" style="margin:6px"></div>`;
-  box.classList.remove('hide');
   $('subT').onclick=async()=>{const ans={};let miss=false;
     qs.forEach(q=>{const c=box.querySelector(`input[name="q${q.id}"]:checked`);if(c)ans[q.id]=+c.value;else miss=true});
     if(miss){$('tRes').className='err';$('tRes').textContent='Please answer every question.';return}
@@ -512,7 +531,9 @@ async function openTest(l){const box=$('testBox');box.classList.add('hide');box.
     $('subT').disabled=false;
     if(error){$('tRes').className='err';$('tRes').textContent='Could not submit: '+error.message;return}
     box.querySelectorAll('.qcard').forEach(c=>{const id=c.dataset.q,right=data.correct[id];c.querySelectorAll('.opt').forEach(o=>{const j=+o.dataset.j;o.classList.remove('good','bad');if(j===right)o.classList.add('good');else if(j===ans[id])o.classList.add('bad')})});
-    $('tRes').className='ok';$('tRes').style.fontSize='18px';$('tRes').textContent='Your score: '+data.score+' / '+data.total}}
+    $('tRes').className='ok';$('tRes').style.fontSize='18px';$('tRes').innerHTML='Your score: '+data.score+' / '+data.total+'<button class="btn" id="toHw" style="margin-top:14px">📝 Continue to homework →</button>';
+    $('toHw').onclick=()=>{show('vH');openHw(l)}};
+  return true}
 sb.auth.getSession().then(({data})=>{if(data.session)start()});
 </script>
 </body>
