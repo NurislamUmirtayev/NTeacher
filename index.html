@@ -289,6 +289,11 @@ input[type=number]{width:100%;padding:12px 14px;border:1.5px solid var(--line);b
     <div class="hero"><h1>🏆 <em>Leaderboard</em></h1><p id="lbMe">Students ranked by XP.</p></div>
     <div id="lbTabs" class="levels"><button class="chip on" data-t="all">All students</button><button class="chip" data-t="grp">My group</button><button class="chip" data-t="groups">Groups</button></div>
     <div id="lbList" class="topics"></div>
+    <div class="panel" id="xpHistoryPanel" style="margin-top:22px">
+      <h3 style="margin-bottom:8px">Your XP history</h3>
+      <p style="margin:0 0 12px;color:var(--mute)">See where your XP came from, including any XP added or taken away by your teacher.</p>
+      <div id="xpHistory"><div class="empty">Loading XP history…</div></div>
+    </div>
     <div class="panel" style="margin-top:22px"><h3 style="margin-bottom:8px">How to earn XP</h3><p style="margin:0;color:var(--mute)">🎯 Test: all answers correct = <b>30 XP</b>, every mistake takes away 3 XP (your best try counts).<br>📝 Homework: up to <b>70 XP</b>, given by your teacher when they check it.<br>⭐ Your teacher can also give extra XP.</p></div>
   </section>
   <section id="vA" class="hide">
@@ -531,7 +536,33 @@ async function openHw(l){const box=$('hwBox');box.innerHTML='';
     await loadMyHw();render();await openHw(l);$('hwR').className='ok';$('hwR').textContent='Homework sent! Your teacher will check it.'}}
 /* ---- leaderboard ---- */
 let lb=[],lbTab='all';
-async function loadLb(){const {data}=await sb.rpc('leaderboard');lb=data||[];renderLb()}
+async function loadLb(){const {data}=await sb.rpc('leaderboard');lb=data||[];renderLb();await loadXpHistory()}
+async function loadXpHistory(){
+  const box=$('xpHistory');
+  if(!me||me.role!=='student'){box.innerHTML='<div class="empty">XP history is available to students.</div>';return}
+  box.innerHTML='<div class="empty">Loading XP history…</div>';
+  const {data,error}=await sb.rpc('my_xp_history');
+  if(error){box.innerHTML='<div class="empty">Could not load XP history. Run the XP history SQL update, then refresh.</div>';return}
+  if(!data||!data.length){box.innerHTML='<div class="empty">No XP activity yet. Complete a test or submit homework to get started.</div>';return}
+  const reasonLabel=r=>{
+    const v=String(r||'').toLowerCase();
+    if(v==='test'||v.includes('test'))return 'Test result';
+    if(v==='homework'||v.includes('homework'))return 'Homework checked';
+    if(v==='admin'||v.includes('admin'))return 'Teacher adjustment';
+    return r||'XP activity';
+  };
+  box.innerHTML=data.map(x=>{
+    const lesson=lessons.find(l=>l.id===x.lesson_id);
+    const title=lesson?lesson.title:(x.lesson_id?'Lesson activity':'General XP adjustment');
+    const points=Number(x.points)||0;
+    const signed=points>0?'+'+points:String(points);
+    const color=points>0?'var(--acc2)':points<0?'var(--danger)':'var(--mute)';
+    return `<div class="row" style="align-items:flex-start">
+      <div style="flex:1;min-width:160px"><b>${esc(reasonLabel(x.reason))}</b><br><small>${esc(title)} · ${x.created_at?new Date(x.created_at).toLocaleString():'Date unavailable'}</small>${x.note?`<p style="margin:4px 0 0;color:var(--mute)">${esc(x.note)}</p>`:''}</div>
+      <b style="flex:none;color:${color}">${signed} XP</b>
+    </div>`;
+  }).join('');
+}
 $('tB').onclick=async()=>{show('vB');await loadLb()};
 $('lbTabs').addEventListener('click',e=>{const t=e.target.dataset&&e.target.dataset.t;if(!t)return;lbTab=t;
   document.querySelectorAll('#lbTabs .chip').forEach(b=>b.classList.toggle('on',b.dataset.t===t));renderLb()});
