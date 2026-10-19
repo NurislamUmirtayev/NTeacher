@@ -231,6 +231,18 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc);box
   .stat div{min-width:0}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+input[type=number]{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);font:inherit}
+#vB .hero{position:relative;overflow:hidden;color:#fff;border-radius:30px;padding:34px;margin:10px 0 22px;background:linear-gradient(120deg,#e8912d 0%,#c4552d 55%,#2f5d62 130%);box-shadow:0 20px 44px rgba(196,85,45,.28)}
+#vB .hero::before{content:"";position:absolute;width:240px;height:240px;border-radius:50%;right:-50px;top:-90px;background:rgba(255,255,255,.14)}
+#vB .hero h1,#vB .hero p{color:#fff;position:relative}#vB .hero h1 em{color:#fff2cf}#vB .hero p{margin-top:10px;color:rgba(255,255,255,.9)}
+.lbrow{cursor:default}.lbrow:hover{transform:none}
+.lbrow.me{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 22%,transparent),var(--sh)}
+.lbrow:nth-child(1) .tn{background:linear-gradient(135deg,#f9d45c,#e0902a);font-size:22px}
+.lbrow:nth-child(2) .tn{background:linear-gradient(135deg,#dfe4ea,#9aa5b1);font-size:22px}
+.lbrow:nth-child(3) .tn{background:linear-gradient(135deg,#e7b27c,#b9733a);font-size:22px}
+.xp{font:700 20px Fraunces,Georgia,serif;white-space:nowrap;background:linear-gradient(120deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+@media(max-width:420px){nav button{font-size:13px;padding:9px 6px}}
+@media(max-width:760px){#vB .hero{padding:24px 20px;border-radius:24px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
@@ -238,7 +250,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc);box
 <div class="blob b1"></div><div class="blob b2"></div>
 <header>
   <div class="logo"><b>N</b><div>Nurislam<span>Teaches</span></div></div>
-  <div class="right"><nav id="nav" class="hide"><button id="tL" class="on">Lessons</button><button id="tA" class="hide">Admin</button></nav><button class="pill hide" id="out">Log out</button></div>
+  <div class="right"><nav id="nav" class="hide"><button id="tL" class="on">Lessons</button><button id="tB">🏆 Leaderboard</button><button id="tA" class="hide">Admin</button></nav><button class="pill hide" id="out">Log out</button></div>
 </header>
 
 <div id="login" class="login">
@@ -273,6 +285,12 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc);box
   <section id="vH" class="hide">
     <button class="back" id="hwBack">← All lessons</button><div class="player" id="hwBox"></div>
   </section>
+  <section id="vB" class="hide">
+    <div class="hero"><h1>🏆 <em>Leaderboard</em></h1><p id="lbMe">Students ranked by XP.</p></div>
+    <div id="lbTabs" class="levels"><button class="chip on" data-t="all">All students</button><button class="chip" data-t="grp">My group</button><button class="chip" data-t="groups">Groups</button></div>
+    <div id="lbList" class="topics"></div>
+    <div class="panel" style="margin-top:22px"><h3 style="margin-bottom:8px">How to earn XP</h3><p style="margin:0;color:var(--mute)">🎯 Test: all answers correct = <b>30 XP</b>, every mistake takes away 3 XP (your best try counts).<br>📝 Homework: up to <b>70 XP</b>, given by your teacher when they check it.<br>⭐ Your teacher can also give extra XP.</p></div>
+  </section>
   <section id="vA" class="hide">
     <div class="stat"><div><i>🎬</i><b id="nL">0</b>lessons</div><div><i>🎓</i><b id="nS">0</b>students</div><div><i>📝</i><b id="nH">0</b>homework to check</div></div>
     <div class="panel">
@@ -280,6 +298,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc);box
       <div class="two"><div><label>Full name</label><input type="text" id="sN"></div><div><label>Username</label><input type="text" id="sU" autocapitalize="off"></div></div>
       <label>Password</label><div style="display:flex;gap:8px"><input type="text" id="sP"><button class="btn sm" id="gen" type="button" style="background:var(--acc2)">Generate</button></div>
       <label>English level</label><select id="sL"></select>
+      <label>Group</label><select id="sG"></select>
       <button class="btn" id="sB">Add student</button><div id="sM"></div>
     </div>
     <div class="panel"><h2>Students</h2><div id="sList"></div></div>
@@ -288,7 +307,8 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc);box
       <label>Title</label><input type="text" id="aT" placeholder="e.g. Present Perfect">
       <label>Description</label><textarea id="aD" placeholder="What will students learn?"></textarea>
       <div class="two"><div><label>Level</label><select id="aLv"></select></div>
-      <div><label>Video (MP4, up to 500 MB)</label><div class="drop"><input type="file" id="aF" accept="video/*"></div></div></div>
+      <div><label>Video (MP4, up to 2 GB)</label><div class="drop"><input type="file" id="aF" accept="video/*"></div></div></div>
+      <p style="color:var(--mute);font-size:13px;margin:8px 0 0">The page accepts files up to 2 GB. Supabase Storage project and bucket limits must also allow this size.</p>
       <button class="btn" id="aS">Upload lesson</button><div id="aM"></div>
     </div>
     <div class="panel"><h2>Your lessons</h2><div id="aList"></div></div>
@@ -315,12 +335,14 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const emailOf=u=>u.toLowerCase().trim()+'@nurislamteaches.app';
-let lessons=[],students=[],me=null,filter='All',mode='S',myHw={};
-const MAXMB=500,LEVELS=['Beginner','Elementary','Pre-Intermediate','Intermediate','Advanced'];
+let lessons=[],students=[],me=null,filter='All',mode='S',myHw={},xpMap={};
+const MAXMB=2048,LEVELS=['Beginner','Elementary','Pre-Intermediate','Intermediate','Advanced'];
 ['aLv','sL'].forEach(id=>$(id).innerHTML=LEVELS.map(x=>`<option>${x}</option>`).join(''));$('aLv').value='Intermediate';
+const GROUPS=Array.from({length:31},(_,i)=>'Junior '+(i+1));
+$('sG').innerHTML='<option value="">No group</option>'+GROUPS.map(x=>`<option>${x}</option>`).join('');
 
-function show(v){['vL','vP','vH','vA'].forEach(x=>$(x).classList.toggle('hide',x!==v));
-  $('tL').classList.toggle('on',v!=='vA');$('tA').classList.toggle('on',v==='vA');
+function show(v){['vL','vP','vH','vB','vA'].forEach(x=>$(x).classList.toggle('hide',x!==v));
+  $('tL').classList.toggle('on',v==='vL'||v==='vP'||v==='vH');$('tB').classList.toggle('on',v==='vB');$('tA').classList.toggle('on',v==='vA');
   if(v!=='vP'){$('pv').pause();$('testBox').classList.add('hide')}scrollTo(0,0)}
 $('tL').onclick=()=>show('vL');$('tA').onclick=()=>show('vA');$('back').onclick=()=>show('vL');
 ['lu','lp'].forEach(i=>$(i).addEventListener('keydown',e=>{if(e.key==='Enter')$('lb').click()}));
@@ -346,8 +368,8 @@ async function start(adminOnly){
 }
 async function enter(){
   $('login').classList.add('hide');$('app').classList.remove('hide');$('nav').classList.remove('hide');$('out').classList.remove('hide');
-  $('tA').classList.toggle('hide',me.role!=='admin');$('who').textContent=me.full_name.split(' ')[0];
-  document.querySelector('.hero p').textContent=me.role==='student'?'Your level: '+me.level+'. You can open your level and the levels below it. Open a topic to watch the video and do the test, then its Homework.':'Pick a topic to watch the video and do the test.';
+  $('tA').classList.toggle('hide',me.role!=='admin');$('who').textContent=me.full_name.split(' ')[0];document.querySelector('#lbTabs [data-t="grp"]').classList.toggle('hide',me.role==='admin');
+  document.querySelector('.hero p').textContent=me.role==='student'?'Your level: '+me.level+'. You can open your level and the levels below it. Watch each lesson fully to unlock its test. After submitting the test, continue to homework.':'Pick a topic to watch the video, take its test, and continue to homework.';
   filter=me.role==='student'?me.level:'All';
   await loadLessons();await loadMyHw();if(me.role==='admin'){await loadStudents();loadHw()}
   show(me.role==='admin'?'vA':'vL');render();
@@ -366,6 +388,7 @@ async function loadLessons(){
 async function loadStudents(){
   const {data}=await sb.from('profiles').select('*').eq('role','student').order('full_name');
   students=data||[];
+  const {data:l}=await sb.rpc('leaderboard');xpMap={};(l||[]).forEach(r=>xpMap[r.id]=r.xp);
 }
 function render(){
   const adm=me&&me.role==='admin',myR=me?LEVELS.indexOf(me.level):0,ef=adm?filter:(LEVELS.indexOf(filter)>=0&&LEVELS.indexOf(filter)<=myR?filter:(me?me.level:'All')),lv=adm?['All',...LEVELS]:LEVELS,q=$('q').value.toLowerCase();
@@ -374,9 +397,7 @@ function render(){
   const list=lessons.map((l,i)=>({...l,n:i+1})).filter(l=>(ef==='All'||l.level===ef)&&((l.title||'')+(l.description||'')).toLowerCase().includes(q));
   $('empty').classList.toggle('hide',list.length>0);
   const hs=h=>!h?'To do':h.status==='checked'?'Checked'+(h.grade?' · '+esc(h.grade):''):'Waiting for check';
-  $('grid').innerHTML=list.map(l=>`<div class="topic" data-id="${l.id}"><span class="tn">${l.n}</span><div><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><i>›</i></div>`
-    +(!adm?`<div class="topic" data-hw="${l.id}"><span class="tn" style="background:var(--acc2);font-size:18px">📝</span><div><h3>${esc(l.title)} (Homework)</h3><p>${esc(l.homework_task||'Send your homework for this lesson')}</p></div><span class="tag" style="margin:0">${hs(myHw[l.id])}</span><i>›</i></div>`:'')).join('');
-  document.querySelectorAll('[data-hw]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.hw);show('vH');openHw(l)});
+  $('grid').innerHTML=list.map(l=>`<div class="topic" data-id="${l.id}"><span class="tn">${l.n}</span><div><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><i>›</i></div>`).join('');
   document.querySelectorAll('.topic[data-id]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP');openLesson(l)});
   if(me&&me.role==='admin')fillLs();
   $('nL').textContent=lessons.length;$('nS').textContent=students.length;
@@ -384,7 +405,7 @@ function render(){
   document.querySelectorAll('[data-dl]').forEach(b=>b.onclick=async()=>{const l=lessons.find(x=>x.id===b.dataset.dl);if(!confirm('Delete "'+l.title+'"?'))return;
     await sb.storage.from('videos').remove([l.video_path]);const {error}=await sb.from('lessons').delete().eq('id',l.id);
     if(error)return alert(error.message);await loadLessons();render()});
-  $('sList').innerHTML=students.length?students.map(s=>`<div class="row"><b>${esc(s.full_name)}<br><small>@${esc(s.username)} ${s.active?'':'· disabled'}</small></b><select data-lv="${s.id}" style="width:auto;padding:7px 10px">${LEVELS.map(x=>`<option ${x===s.level?'selected':''}>${x}</option>`).join('')}</select><button class="btn sm ghost" data-ts="${s.id}">${s.active?'Disable':'Enable'}</button></div>`).join(''):'<div class="empty">No students yet.</div>';
+  $('sList').innerHTML=students.length?students.map(s=>`<div class="row"><b>${esc(s.full_name)}<br><small>@${esc(s.username)} · ${xpMap[s.id]||0} XP ${s.active?'':'· disabled'}</small></b><select data-gp="${s.id}" style="width:auto;padding:7px 10px"><option value="">No group</option>${GROUPS.map(x=>`<option ${x===s.group_name?'selected':''}>${x}</option>`).join('')}</select><button class="btn sm" data-xp="${s.id}" type="button">± XP</button><select data-lv="${s.id}" style="width:auto;padding:7px 10px">${LEVELS.map(x=>`<option ${x===s.level?'selected':''}>${x}</option>`).join('')}</select><button class="btn sm ghost" data-ts="${s.id}">${s.active?'Disable':'Enable'}</button></div>`).join(''):'<div class="empty">No students yet.</div>';
   document.querySelectorAll('[data-ts]').forEach(b=>b.onclick=async()=>{const s=students.find(x=>x.id===b.dataset.ts);
     const {error}=await sb.from('profiles').update({active:!s.active}).eq('id',s.id);if(error)return alert(error.message);await loadStudents();render()});
 }
@@ -397,7 +418,7 @@ $('sB').onclick=async()=>{
   $('sB').disabled=true;
   // a separate, non-persistent client so the admin stays logged in
   const tmp=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
-  const {data,error}=await tmp.auth.signUp({email:emailOf(u),password:p,options:{data:{username:u,full_name:n,level:$('sL').value}}});
+  const {data,error}=await tmp.auth.signUp({email:emailOf(u),password:p,options:{data:{username:u,full_name:n,level:$('sL').value,group:$('sG').value}}});
   if(error||!data.user){m.className='err';m.textContent='Failed: '+(error?error.message:'unknown error');$('sB').disabled=false;return}
   const {error:e2}=await sb.from('profiles').update({active:true}).eq('id',data.user.id);
   $('sB').disabled=false;
@@ -408,11 +429,11 @@ $('sB').onclick=async()=>{
 $('aS').onclick=async()=>{
   const f=$('aF').files[0],t=$('aT').value.trim(),m=$('aM'),b=$('aS');m.className='err';
   if(!t||!f){m.textContent='Add a title and choose a video.';return}
-  if(f.size>MAXMB*1024*1024){m.textContent='Video is over '+MAXMB+' MB. Compress it first.';return}
+  if(f.size>MAXMB*1024*1024){m.textContent='Video is over '+MAXMB+' MB. Choose a smaller video or raise the upload limit.';return}
   b.disabled=true;m.className='ok';m.textContent='Uploading… big videos can take several minutes. Keep this page open.';
   const path=crypto.randomUUID()+'.mp4';
   const up=await sb.storage.from('videos').upload(path,f,{contentType:f.type||'video/mp4'});
-  if(up.error){m.className='err';m.textContent='Upload failed: '+up.error.message+(/size|exceed|large|413/i.test(up.error.message)?' — Supabase\'s free plan allows only 50 MB per file. Compress the video, or upgrade Supabase to Pro and raise the Global file size limit in Storage settings.':'');b.disabled=false;return}
+  if(up.error){m.className='err';m.textContent='Upload failed: '+up.error.message+(/size|exceed|large|413|payload/i.test(up.error.message)?' — The Supabase Storage project/bucket file-size limit may be lower than 2 GB. Raise it in Supabase Dashboard → Storage → Settings, and check your plan limit.':'');b.disabled=false;return}
   const {error}=await sb.from('lessons').insert({title:t,description:$('aD').value.trim(),level:$('aLv').value,video_path:path});
   b.disabled=false;
   if(error){m.className='err';m.textContent='Failed: '+error.message;return}
@@ -421,8 +442,16 @@ $('aS').onclick=async()=>{
 $('q').oninput=render;
 
 /* ---- admin: change student level ---- */
-document.addEventListener('change',async e=>{const id=e.target.dataset&&e.target.dataset.lv;if(!id)return;
-  const {error}=await sb.from('profiles').update({level:e.target.value}).eq('id',id);if(error)alert(error.message);else await loadStudents()});
+document.addEventListener('change',async e=>{const d=e.target.dataset||{};
+  if(d.lv){const {error}=await sb.from('profiles').update({level:e.target.value}).eq('id',d.lv);if(error)alert(error.message);else await loadStudents()}
+  else if(d.gp!==undefined){const {error}=await sb.from('profiles').update({group_name:e.target.value||null}).eq('id',d.gp);if(error)alert(error.message);else await loadStudents()}});
+/* admin: give / take XP */
+document.addEventListener('click',async e=>{const id=e.target.dataset&&e.target.dataset.xp;if(!id)return;
+  const v=prompt('How many XP do you want to give? (type a minus number, like -10, to take XP away)');if(v===null)return;
+  const n=parseInt(v,10);if(!Number.isFinite(n)||n===0){alert('Please type a whole number, like 20 or -10.');return}
+  const note=prompt('Reason (optional):');
+  const {error}=await sb.rpc('admin_give_xp',{p_student:id,p_points:n,p_note:note||null});
+  if(error)alert(error.message);else{await loadStudents();render()}});
 /* ---- admin: test builder ---- */
 let qn=0;
 function qBlock(q){qn++;const n=qn,o=(q&&q.options)||[];
@@ -465,14 +494,16 @@ async function loadHw(){
   const {data}=await sb.from('homework').select('*,profiles(full_name,username),lessons(title)').order('created_at',{ascending:false}).limit(50);
   const rows=data||[],paths=rows.filter(r=>r.file_path).map(r=>r.file_path),um={};
   if(paths.length){const {data:u}=await sb.storage.from('homework').createSignedUrls(paths,7200);(u||[]).forEach(x=>um[x.path]=x.signedUrl)}
+  const {data:xd}=await sb.from('xp_log').select('student_id,lesson_id,points').eq('reason','homework');const xm={};(xd||[]).forEach(x=>xm[x.student_id+'|'+x.lesson_id]=x.points);
   rows.sort((a,b)=>(a.status==='submitted'?0:1)-(b.status==='submitted'?0:1));
   $('nH').textContent=rows.filter(r=>r.status==='submitted').length;
   $('hwList').innerHTML=rows.length?rows.map(r=>`<div class="qcard" data-h="${r.id}"><b>${esc(r.profiles&&r.profiles.full_name)}</b> <small style="color:var(--mute)">· ${esc(r.lessons&&r.lessons.title)} · ${new Date(r.created_at).toLocaleString()}</small> <span class="tag" style="margin:0 0 0 8px">${r.status==='checked'?'Checked':'Waiting'}</span>`
     +(r.answer?`<p style="white-space:pre-wrap;margin:8px 0">${esc(r.answer)}</p>`:'')
     +(r.file_path?`<p style="margin:6px 0"><a href="${esc(um[r.file_path]||'#')}" target="_blank" rel="noopener" style="color:var(--acc)">📎 Open attached file</a></p>`:'')
-    +`<div class="two"><div><label>Grade</label><input type="text" class="hg" value="${esc(r.grade)}" placeholder="e.g. 8/10"></div><div></div></div><label>Feedback</label><textarea class="hf" placeholder="Write feedback for the student">${esc(r.feedback)}</textarea><button class="btn sm" data-ck="${r.id}" style="margin-top:10px">${r.status==='checked'?'Update':'Mark as checked'}</button></div>`).join(''):'<div class="empty">No homework yet.</div>'}
+    +`<div class="two"><div><label>Grade</label><input type="text" class="hg" value="${esc(r.grade)}" placeholder="e.g. 8/10"></div><div><label>XP (0–70)</label><input type="number" class="hx" min="0" max="70" value="${xm[r.student_id+'|'+r.lesson_id]??70}"></div></div><label>Feedback</label><textarea class="hf" placeholder="Write feedback for the student">${esc(r.feedback)}</textarea><button class="btn sm" data-ck="${r.id}" style="margin-top:10px">${r.status==='checked'?'Update':'Mark as checked'}</button></div>`).join(''):'<div class="empty">No homework yet.</div>'}
 $('hwList').addEventListener('click',async e=>{const id=e.target.dataset&&e.target.dataset.ck;if(!id)return;const c=e.target.closest('.qcard');e.target.disabled=true;
-  const {error}=await sb.from('homework').update({status:'checked',grade:c.querySelector('.hg').value.trim()||null,feedback:c.querySelector('.hf').value.trim()||null,checked_at:new Date().toISOString()}).eq('id',id);
+  const xp=Math.min(70,Math.max(0,parseInt(c.querySelector('.hx').value,10)||0));
+  const {error}=await sb.rpc('check_homework',{p_id:id,p_grade:c.querySelector('.hg').value.trim()||null,p_feedback:c.querySelector('.hf').value.trim()||null,p_xp:xp});
   if(error){alert(error.message);e.target.disabled=false;return}await loadHw()});
 /* ---- student: homework status + back ---- */
 async function loadMyHw(){myHw={};if(!me||me.role!=='student')return;
@@ -483,7 +514,7 @@ $('hwBack').onclick=async()=>{await loadMyHw();render();show('vL')};
 async function openHw(l){const box=$('hwBox');box.innerHTML='';
   const {data:old}=await sb.from('homework').select('*').eq('lesson_id',l.id).order('created_at',{ascending:false});
   const mine=(old||[]).filter(h=>h.student_id===me.id);
-  box.innerHTML=`<h2 style="margin:6px 6px 0">Homework: ${esc(l.title)}</h2><p style="margin:4px 6px 0;color:var(--mute);white-space:pre-wrap">${esc(l.homework_task||'Write your answer below or attach a file.')}</p>
+  box.innerHTML=`<h2 style="margin:6px 6px 0">Homework: ${esc(l.title)}</h2><p style="margin:4px 6px 0;color:var(--mute);white-space:pre-wrap">${esc(l.homework_task||'Write your answer below or attach a file.')}</p><span class="tag" style="margin:10px 6px 0">⭐ Up to 70 XP</span>
   <div style="padding:6px"><label>Your answer</label><textarea id="hwA" placeholder="Type your homework here…"></textarea><label>Attach a file (optional, up to 20 MB)</label><div class="drop"><input type="file" id="hwF"></div><button class="btn" id="hwS">Send homework</button><div id="hwR" style="margin-top:8px"></div></div>`
   +(mine.length?`<h3 style="margin:14px 6px 0">Your sent homework</h3>`+mine.map(h=>`<div class="qcard" style="margin:10px 6px"><span class="tag" style="margin:0">${h.status==='checked'?'Checked'+(h.grade?' · '+esc(h.grade):''):'Waiting for check'}</span> <small style="color:var(--mute)">${new Date(h.created_at).toLocaleString()}</small>${h.answer?`<p style="white-space:pre-wrap;margin:8px 0 0">${esc(h.answer)}</p>`:''}${h.feedback?`<p style="margin:8px 0 0"><b>Teacher:</b> ${esc(h.feedback)}</p>`:''}</div>`).join(''):'');
   box.classList.remove('hide');
@@ -498,6 +529,26 @@ async function openHw(l){const box=$('hwBox');box.innerHTML='';
     const {error}=await sb.from('homework').insert({lesson_id:l.id,answer:a||null,file_path:path});
     if(error){r.className='err';r.textContent='Could not send: '+error.message;$('hwS').disabled=false;return}
     await loadMyHw();render();await openHw(l);$('hwR').className='ok';$('hwR').textContent='Homework sent! Your teacher will check it.'}}
+/* ---- leaderboard ---- */
+let lb=[],lbTab='all';
+async function loadLb(){const {data}=await sb.rpc('leaderboard');lb=data||[];renderLb()}
+$('tB').onclick=async()=>{show('vB');await loadLb()};
+$('lbTabs').addEventListener('click',e=>{const t=e.target.dataset&&e.target.dataset.t;if(!t)return;lbTab=t;
+  document.querySelectorAll('#lbTabs .chip').forEach(b=>b.classList.toggle('on',b.dataset.t===t));renderLb()});
+function renderLb(){
+  const medal=i=>['🥇','🥈','🥉'][i]||(i+1),isS=me.role==='student',myIdx=lb.findIndex(r=>r.id===me.id);
+  $('lbMe').textContent=isS&&myIdx>=0?`You have ${lb[myIdx].xp} XP · rank #${myIdx+1} of ${lb.length}`+(me.group_name?` · ${me.group_name}`:''):'Students ranked by XP.';
+  let html='';
+  if(lbTab==='groups'){
+    const g={};lb.forEach(r=>{const k=r.group_name||'No group';g[k]=g[k]||{n:0,xp:0};g[k].n++;g[k].xp+=Number(r.xp)});
+    const arr=Object.entries(g).sort((a,b)=>b[1].xp-a[1].xp);
+    html=arr.length?arr.map(([k,v],i)=>`<div class="topic lbrow ${isS&&k===me.group_name?'me':''}"><span class="tn">${medal(i)}</span><div><h3>${esc(k)}</h3><p>${v.n} student${v.n===1?'':'s'}</p></div><span class="xp">${v.xp} XP</span></div>`).join(''):'<div class="empty">No groups yet.</div>';
+  }else{
+    let list=lb;
+    if(lbTab==='grp'){if(!me.group_name){$('lbList').innerHTML='<div class="empty">You are not in a group yet. Ask your teacher.</div>';return}list=lb.filter(r=>r.group_name===me.group_name)}
+    html=list.length?list.map((r,i)=>`<div class="topic lbrow ${r.id===me.id?'me':''}"><span class="tn">${medal(i)}</span><div><h3>${esc(r.full_name)}</h3><p>${esc(r.group_name||'No group')} · ${esc(r.level)}</p></div><span class="xp">${r.xp} XP</span></div>`).join(''):'<div class="empty">No students yet.</div>';
+  }
+  $('lbList').innerHTML=html}
 /* ---- lesson flow: watch -> start test -> homework ---- */
 let maxT=0;
 const wkey=l=>'nt-watched:'+(me?me.id:'')+':'+l.id;
@@ -522,7 +573,7 @@ async function openLesson(l){
 async function prepTest(l){const box=$('testBox');box.classList.add('hide');box.innerHTML='';
   const {data:qs}=await sb.from('questions').select('*').eq('lesson_id',l.id).order('position');
   if(!qs||!qs.length)return false;
-  box.innerHTML=`<h2 style="margin:6px 6px 0">Test: ${esc(l.title)}</h2><p style="margin:4px 6px 0;color:var(--mute)">Answer every question, then press Submit.</p>`+qs.map((q,i)=>`<div class="qcard" data-q="${q.id}"><b>${i+1}. ${esc(q.question)}</b>`+q.options.map((o,j)=>`<label class="opt" data-j="${j}"><input type="radio" name="q${q.id}" value="${j}">${esc(o)}</label>`).join('')+`</div>`).join('')+`<button class="btn" id="subT" style="margin:6px;width:calc(100% - 12px)">Submit answers</button><div id="tRes" style="margin:6px"></div>`;
+  box.innerHTML=`<h2 style="margin:6px 6px 0">Test: ${esc(l.title)}</h2><p style="margin:4px 6px 0;color:var(--mute)">Answer every question, then press Submit. Perfect score = 30 XP, each mistake = −3 XP.</p>`+qs.map((q,i)=>`<div class="qcard" data-q="${q.id}"><b>${i+1}. ${esc(q.question)}</b>`+q.options.map((o,j)=>`<label class="opt" data-j="${j}"><input type="radio" name="q${q.id}" value="${j}">${esc(o)}</label>`).join('')+`</div>`).join('')+`<button class="btn" id="subT" style="margin:6px;width:calc(100% - 12px)">Submit answers</button><div id="tRes" style="margin:6px"></div>`;
   $('subT').onclick=async()=>{const ans={};let miss=false;
     qs.forEach(q=>{const c=box.querySelector(`input[name="q${q.id}"]:checked`);if(c)ans[q.id]=+c.value;else miss=true});
     if(miss){$('tRes').className='err';$('tRes').textContent='Please answer every question.';return}
@@ -531,7 +582,7 @@ async function prepTest(l){const box=$('testBox');box.classList.add('hide');box.
     $('subT').disabled=false;
     if(error){$('tRes').className='err';$('tRes').textContent='Could not submit: '+error.message;return}
     box.querySelectorAll('.qcard').forEach(c=>{const id=c.dataset.q,right=data.correct[id];c.querySelectorAll('.opt').forEach(o=>{const j=+o.dataset.j;o.classList.remove('good','bad');if(j===right)o.classList.add('good');else if(j===ans[id])o.classList.add('bad')})});
-    $('tRes').className='ok';$('tRes').style.fontSize='18px';$('tRes').innerHTML='Your score: '+data.score+' / '+data.total+'<button class="btn" id="toHw" style="margin-top:14px">📝 Continue to homework →</button>';
+    $('tRes').className='ok';$('tRes').style.fontSize='18px';$('tRes').innerHTML='Your score: '+data.score+' / '+data.total+'<br>⭐ +'+data.xp+' XP'+(data.best>data.xp?' (your best try: '+data.best+' XP)':'')+'<button class="btn" id="toHw" style="margin-top:14px">📝 Continue to homework →</button>';
     $('toHw').onclick=()=>{show('vH');openHw(l)}};
   return true}
 sb.auth.getSession().then(({data})=>{if(data.session)start()});
