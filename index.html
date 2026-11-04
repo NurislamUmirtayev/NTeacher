@@ -255,6 +255,32 @@ input[type=number]{width:100%;padding:12px 14px;border:1.5px solid var(--line);b
 .topic.hw-done h3{color:#1f7a45}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .topic.hw-done h3{color:#6ee0a0}}
 @media(max-width:760px){.topic[data-hw]{margin-left:0}}
+/* ===== lesson group: lesson + homework behind it ===== */
+.lgroup{background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:var(--sh);overflow:hidden;animation:rise .5s cubic-bezier(.2,.7,.2,1) both;transition:box-shadow .25s,border-color .25s}
+.lgroup:nth-child(2){animation-delay:.05s}.lgroup:nth-child(3){animation-delay:.1s}.lgroup:nth-child(4){animation-delay:.15s}.lgroup:nth-child(n+5){animation-delay:.2s}
+.lgroup .topic{border:0;box-shadow:none;border-radius:0;background:transparent;animation:none;margin:0}
+.lgroup .topic:hover{transform:none;background:color-mix(in srgb,var(--acc) 6%,transparent)}
+.lgroup .topic.hwsub{border-top:1.5px dashed var(--line);background:color-mix(in srgb,var(--acc2) 6%,transparent);padding-left:36px}
+.lgroup .topic.hwsub .tn{width:36px;height:36px;border-radius:11px}
+.lgroup .topic.hwsub:hover{background:color-mix(in srgb,var(--acc2) 13%,transparent)}
+.lgroup .topic.hwsub.locked{opacity:.72}
+.lgroup .topic.hwsub.locked .tag{color:var(--mute);background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.lgroup .topic.hwsub.locked .tn{filter:grayscale(.55)}
+.lgroup.hw-wait .hwsub .tag{color:#9a6a00;background:rgba(240,180,40,.24)}
+.lgroup.hw-done{border:1.5px solid #2e9e5b;box-shadow:0 14px 32px rgba(46,158,91,.2)}
+.lgroup.hw-done .hwsub{background:color-mix(in srgb,#2e9e5b 14%,transparent);border-top-color:#2e9e5b}
+.lgroup.hw-done .hwsub .tn{background:linear-gradient(135deg,#3cc274,#1f8a4c)!important;box-shadow:0 8px 16px rgba(46,158,91,.38)}
+.lgroup.hw-done .hwsub .tag{color:#fff;background:#2e9e5b}
+.lgroup.hw-done .hwsub h3{color:#1f7a45}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lgroup.hw-done .hwsub h3{color:#6ee0a0}}
+.steps{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.steps span{font-size:12.5px;font-weight:600;padding:4px 11px;border-radius:99px;border:1px solid var(--line);color:var(--mute);background:color-mix(in srgb,var(--bg) 60%,transparent)}
+.steps span.ok{color:#fff;background:#2e9e5b;border-color:#2e9e5b}
+.pbar{height:10px;border-radius:99px;background:rgba(255,255,255,.28);margin-top:18px;max-width:420px;overflow:hidden;position:relative}
+.pbar i{display:block;height:100%;border-radius:99px;background:#fff;transition:width .6s ease}
+#prog small{display:block;margin-top:8px;color:rgba(255,255,255,.92);font-weight:600;position:relative}
+#prog .pbar{position:relative}
+@media(max-width:760px){.lgroup .topic.hwsub{padding-left:20px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
@@ -283,7 +309,7 @@ input[type=number]{width:100%;padding:12px 14px;border:1.5px solid var(--line);b
 
 <main id="app" class="hide">
   <section id="vL">
-    <div class="hero"><h1>Hello, <em id="who">student</em> 👋</h1><p>Pick a lesson and press play.</p></div>
+    <div class="hero"><h1>Hello, <em id="who">student</em> 👋</h1><p>Pick a lesson and press play.</p><div id="prog"></div></div>
     <div id="chips" class="levels"></div>
     <div class="bar"><input type="text" id="q" placeholder="Search lessons…"></div>
     <div id="grid" class="topics"></div>
@@ -346,7 +372,7 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const emailOf=u=>u.toLowerCase().trim()+'@nurislamteaches.app';
-let lessons=[],students=[],me=null,filter='All',mode='S',myHw={},xpMap={};
+let lessons=[],students=[],me=null,filter='All',mode='S',myHw={},xpMap={},tested={},hasTest={};
 const MAXMB=500,LEVELS=['Beginner','Elementary','Pre-Intermediate','Intermediate','Advanced'];
 ['aLv','sL'].forEach(id=>$(id).innerHTML=LEVELS.map(x=>`<option>${x}</option>`).join(''));$('aLv').value='Intermediate';
 const GROUPS=Array.from({length:31},(_,i)=>'Junior '+(i+1));
@@ -355,7 +381,7 @@ $('sG').innerHTML='<option value="">No group</option>'+GROUPS.map(x=>`<option>${
 function show(v){['vL','vP','vH','vB','vA'].forEach(x=>$(x).classList.toggle('hide',x!==v));
   $('tL').classList.toggle('on',v==='vL'||v==='vP'||v==='vH');$('tB').classList.toggle('on',v==='vB');$('tA').classList.toggle('on',v==='vA');
   if(v!=='vP'){$('pv').pause();$('testBox').classList.add('hide')}scrollTo(0,0)}
-$('tL').onclick=()=>show('vL');$('tA').onclick=()=>show('vA');$('back').onclick=()=>show('vL');
+$('tL').onclick=()=>{render();show('vL')};$('tA').onclick=()=>show('vA');$('back').onclick=()=>{render();show('vL')};
 ['lu','lp'].forEach(i=>$(i).addEventListener('keydown',e=>{if(e.key==='Enter')$('lb').click()}));
 
 function setMode(m){mode=m;$('mS').classList.toggle('on',m==='S');$('mA').classList.toggle('on',m==='A');$('le').textContent='';
@@ -382,7 +408,7 @@ async function enter(){
   $('tA').classList.toggle('hide',me.role!=='admin');$('who').textContent=me.full_name.split(' ')[0];document.querySelector('#lbTabs [data-t="grp"]').classList.toggle('hide',me.role==='admin');
   document.querySelector('.hero p').textContent=me.role==='student'?'Your level: '+me.level+'. You can open your level and the levels below it. Open a topic to watch the video and do the test, then its Homework.':'Pick a topic to watch the video and do the test.';
   filter=me.role==='student'?me.level:'All';
-  await loadLessons();await loadMyHw();if(me.role==='admin'){await loadStudents();loadHw()}
+  await loadLessons();await loadMyHw();await loadProgress();if(me.role==='admin'){await loadStudents();loadHw()}
   show(me.role==='admin'?'vA':'vL');render();
 }
 $('out').onclick=async()=>{await sb.auth.signOut();me=null;$('lp').value='';['app','nav','out'].forEach(x=>$(x).classList.add('hide'));$('login').classList.remove('hide');$('pv').pause()};
@@ -408,10 +434,14 @@ function render(){
   const list=lessons.map((l,i)=>({...l,n:i+1})).filter(l=>(ef==='All'||l.level===ef)&&((l.title||'')+(l.description||'')).toLowerCase().includes(q));
   $('empty').classList.toggle('hide',list.length>0);
   const hs=h=>!h?'To do':h.status==='checked'?'✓ Checked'+(h.grade?' · '+esc(h.grade):''):'Waiting for check',hcls=h=>!h?'':h.status==='checked'?'hw-done':'hw-wait';
-  $('grid').innerHTML=list.map(l=>`<div class="topic" data-id="${l.id}"><span class="tn">${l.n}</span><div><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><i>›</i></div>`
-    +`<div class="topic ${adm?'':hcls(myHw[l.id])}" data-hw="${l.id}"><span class="tn" style="background:var(--acc2);font-size:20px">${!adm&&myHw[l.id]&&myHw[l.id].status==='checked'?'✓':'📝'}</span><div><h3>${esc(l.title)} (Homework)</h3><p>${esc(l.homework_task||'Send your homework for this lesson')}</p></div><span class="tag" style="margin:0">${adm?'Homework':hs(myHw[l.id])}</span><i>›</i></div>`).join('');
-  document.querySelectorAll('[data-hw]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.hw);show('vH');openHw(l)});
-  document.querySelectorAll('.topic[data-id]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP');openLesson(l)});
+  $('grid').innerHTML=list.map(l=>{
+    const h=myHw[l.id],done=!adm&&!!h&&h.status==='checked',vd=!adm&&vDone(l),td=!adm&&tDone(l),open=adm||(vd&&td);
+    const steps=adm?'':`<div class="steps"><span class="${vd?'ok':''}">${vd?'✓ ':''}🎬 Video</span>${hasTest[l.id]?`<span class="${vd&&td?'ok':''}">${vd&&td?'✓ ':''}✅ Test</span>`:''}<span class="${done?'ok':''}">${done?'✓ ':''}📝 Homework</span></div>`;
+    return `<div class="lgroup ${adm?'':hcls(h)}"><div class="topic" data-id="${l.id}"><span class="tn">${l.n}</span><div><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p>${steps}</div><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><i>›</i></div>`
+      +`<div class="topic hwsub ${open?'':'locked'}" data-hw="${l.id}"><span class="tn" style="background:var(--acc2);font-size:20px">${done?'✓':open?'📝':'🔒'}</span><div><h3>${esc(l.title)} (Homework)</h3><p>${esc(l.homework_task||'Send your homework for this lesson')}</p></div><span class="tag" style="margin:0">${adm?'Homework':open?hs(h):'🔒 After the lesson'}</span><i>›</i></div></div>`}).join('');
+  document.querySelectorAll('[data-hw]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.hw);if(c.classList.contains('locked')){openL(l);return}show('vH');openHw(l)});
+  if(!adm){const total=lessons.length,dn=lessons.filter(l=>vDone(l)&&tDone(l)&&myHw[l.id]).length;$('prog').innerHTML=total?`<div class="pbar"><i style="width:${Math.round(dn/total*100)}%"></i></div><small>${dn} of ${total} lessons completed</small>`:''}else $('prog').innerHTML='';
+  document.querySelectorAll('.topic[data-id]').forEach(c=>c.onclick=()=>{openL(lessons.find(x=>x.id===c.dataset.id))});
   if(me&&me.role==='admin')fillLs();
   $('nL').textContent=lessons.length;$('nS').textContent=students.length;
   $('aList').innerHTML=lessons.length?lessons.map(l=>`<div class="row"><b>${esc(l.title)}</b><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><button class="btn sm ghost" data-dl="${l.id}">Delete</button></div>`).join(''):'<div class="empty">No lessons yet.</div>';
@@ -564,6 +594,11 @@ function renderLb(){
   }
   $('lbList').innerHTML=html}
 /* ---- lesson flow: watch -> start test -> homework ---- */
+function openL(l){$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP');openLesson(l)}
+const vDone=l=>isWatched(l),tDone=l=>!hasTest[l.id]||!!tested[l.id];
+async function loadProgress(){tested={};hasTest={};if(!me||me.role!=='student')return;
+  const [r,q]=await Promise.all([sb.from('results').select('lesson_id').eq('student_id',me.id),sb.from('questions').select('lesson_id')]);
+  (r.data||[]).forEach(x=>tested[x.lesson_id]=true);(q.data||[]).forEach(x=>hasTest[x.lesson_id]=true)}
 let maxT=0;
 const wkey=l=>'nt-watched:'+(me?me.id:'')+':'+l.id;
 function isWatched(l){try{return localStorage.getItem(wkey(l))==='1'}catch(e){return false}}
@@ -597,7 +632,7 @@ async function prepTest(l){const box=$('testBox');box.classList.add('hide');box.
     if(error){$('tRes').className='err';$('tRes').textContent='Could not submit: '+error.message;return}
     box.querySelectorAll('.qcard').forEach(c=>{const id=c.dataset.q,right=data.correct[id];c.querySelectorAll('.opt').forEach(o=>{const j=+o.dataset.j;o.classList.remove('good','bad');if(j===right)o.classList.add('good');else if(j===ans[id])o.classList.add('bad')})});
     $('tRes').className='ok';$('tRes').style.fontSize='18px';$('tRes').innerHTML='Your score: '+data.score+' / '+data.total+'<br>⭐ +'+data.xp+' XP'+(data.best>data.xp?' (your best try: '+data.best+' XP)':'')+'<button class="btn" id="toHw" style="margin-top:14px">📝 Continue to homework →</button>';
-    $('toHw').onclick=()=>{show('vH');openHw(l)}};
+    tested[l.id]=true;$('toHw').onclick=()=>{show('vH');openHw(l)}};
   return true}
 sb.auth.getSession().then(({data})=>{if(data.session)start()});
 </script>
