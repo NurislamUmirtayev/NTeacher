@@ -84,11 +84,6 @@ textarea{min-height:80px;resize:vertical}
 .topic i{font-style:normal;color:var(--mute);font-size:26px}
 @media(max-width:760px){.login{grid-template-columns:1fr;gap:24px;padding-top:10px}.two{grid-template-columns:1fr}}
 
-/* Homework item card styling */
-.topic.hw-card{border-left:4px solid var(--line);background:color-mix(in srgb, var(--card) 92%, var(--bg));}
-.topic.hw-card.checked{border-left-color:#2e9e5b;}
-.topic.hw-card.checking{border-left-color:#2f5d62;}
-
 /* ===== responsive: phones, tablets, laptops ===== */
 html{-webkit-text-size-adjust:100%}
 img,video{max-width:100%}
@@ -248,6 +243,18 @@ input[type=number]{width:100%;padding:12px 14px;border:1.5px solid var(--line);b
 .xp{font:700 20px Fraunces,Georgia,serif;white-space:nowrap;background:linear-gradient(120deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
 @media(max-width:420px){nav button{font-size:13px;padding:9px 6px}}
 @media(max-width:760px){#vB .hero{padding:24px 20px;border-radius:24px}}
+/* homework row = same look as the lesson row */
+.topic[data-hw]{margin-left:0;border-style:solid;background:var(--card)}
+.topic[data-hw]::before{opacity:0;background:linear-gradient(var(--acc),var(--acc2))}
+.topic[data-hw]:hover::before{opacity:1}
+.topic.hw-wait .tag{color:#9a6a00;background:rgba(240,180,40,.24)}
+.topic.hw-done{border:1.5px solid #2e9e5b;background:color-mix(in srgb,#2e9e5b 11%,var(--card));box-shadow:0 12px 28px rgba(46,158,91,.2)}
+.topic.hw-done::before,.topic.hw-done:hover::before{opacity:1;background:#2e9e5b}
+.topic.hw-done .tn{background:linear-gradient(135deg,#3cc274,#1f8a4c)!important;box-shadow:0 8px 16px rgba(46,158,91,.38)}
+.topic.hw-done .tag{color:#fff;background:#2e9e5b}
+.topic.hw-done h3{color:#1f7a45}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .topic.hw-done h3{color:#6ee0a0}}
+@media(max-width:760px){.topic[data-hw]{margin-left:0}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
@@ -294,11 +301,6 @@ input[type=number]{width:100%;padding:12px 14px;border:1.5px solid var(--line);b
     <div class="hero"><h1>🏆 <em>Leaderboard</em></h1><p id="lbMe">Students ranked by XP.</p></div>
     <div id="lbTabs" class="levels"><button class="chip on" data-t="all">All students</button><button class="chip" data-t="grp">My group</button><button class="chip" data-t="groups">Groups</button></div>
     <div id="lbList" class="topics"></div>
-    <div class="panel" id="xpHistoryPanel" style="margin-top:22px">
-      <h3 style="margin-bottom:8px">Your XP history</h3>
-      <p style="margin:0 0 12px;color:var(--mute)">See where your XP came from, including any XP added or taken away by your teacher.</p>
-      <div id="xpHistory"><div class="empty">Loading XP history…</div></div>
-    </div>
     <div class="panel" style="margin-top:22px"><h3 style="margin-bottom:8px">How to earn XP</h3><p style="margin:0;color:var(--mute)">🎯 Test: all answers correct = <b>30 XP</b>, every mistake takes away 3 XP (your best try counts).<br>📝 Homework: up to <b>70 XP</b>, given by your teacher when they check it.<br>⭐ Your teacher can also give extra XP.</p></div>
   </section>
   <section id="vA" class="hide">
@@ -317,8 +319,7 @@ input[type=number]{width:100%;padding:12px 14px;border:1.5px solid var(--line);b
       <label>Title</label><input type="text" id="aT" placeholder="e.g. Present Perfect">
       <label>Description</label><textarea id="aD" placeholder="What will students learn?"></textarea>
       <div class="two"><div><label>Level</label><select id="aLv"></select></div>
-      <div><label>Video (MP4, up to 2 GB)</label><div class="drop"><input type="file" id="aF" accept="video/*"></div></div></div>
-      <p style="color:var(--mute);font-size:13px;margin:8px 0 0">The page accepts files up to 2 GB. Supabase Storage project and bucket limits must also allow this size.</p>
+      <div><label>Video (MP4, up to 500 MB)</label><div class="drop"><input type="file" id="aF" accept="video/*"></div></div></div>
       <button class="btn" id="aS">Upload lesson</button><div id="aM"></div>
     </div>
     <div class="panel"><h2>Your lessons</h2><div id="aList"></div></div>
@@ -346,19 +347,24 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const emailOf=u=>u.toLowerCase().trim()+'@nurislamteaches.app';
 let lessons=[],students=[],me=null,filter='All',mode='S',myHw={},xpMap={};
-const MAXMB=2048,LEVELS=['Beginner','Elementary','Pre-Intermediate','Intermediate','Advanced'];
+const MAXMB=500,LEVELS=['Beginner','Elementary','Pre-Intermediate','Intermediate','Advanced'];
 ['aLv','sL'].forEach(id=>$(id).innerHTML=LEVELS.map(x=>`<option>${x}</option>`).join(''));$('aLv').value='Intermediate';
 const GROUPS=Array.from({length:31},(_,i)=>'Junior '+(i+1));
 $('sG').innerHTML='<option value="">No group</option>'+GROUPS.map(x=>`<option>${x}</option>`).join('');
 
-function show(v){['vL','vP','vH','vB','vA'].forEach(x=>$(x).classList.toggle('hide',x!==v));$('tL').classList.toggle('on',v==='vL'||v==='vP'||v==='vH');$('tB').classList.toggle('on',v==='vB');$('tA').classList.toggle('on',v==='vA');
-  if(v!=='vP'){$('pv').pause();$('testBox').classList.add('hide')}scrollTo(0,0)}$('tL').onclick=()=>show('vL');$('tA').onclick=()=>show('vA');$('back').onclick=()=>show('vL');
+function show(v){['vL','vP','vH','vB','vA'].forEach(x=>$(x).classList.toggle('hide',x!==v));
+  $('tL').classList.toggle('on',v==='vL'||v==='vP'||v==='vH');$('tB').classList.toggle('on',v==='vB');$('tA').classList.toggle('on',v==='vA');
+  if(v!=='vP'){$('pv').pause();$('testBox').classList.add('hide')}scrollTo(0,0)}
+$('tL').onclick=()=>show('vL');$('tA').onclick=()=>show('vA');$('back').onclick=()=>show('vL');
 ['lu','lp'].forEach(i=>$(i).addEventListener('keydown',e=>{if(e.key==='Enter')$('lb').click()}));
 
 function setMode(m){mode=m;$('mS').classList.toggle('on',m==='S');$('mA').classList.toggle('on',m==='A');$('le').textContent='';
-  $('lu').placeholder=m==='A'?'Admin username':'';}$('mS').onclick=()=>setMode('S');$('mA').onclick=()=>setMode('A');$('lb').onclick=async()=>{
+  $('lu').placeholder=m==='A'?'Admin username':'';}
+$('mS').onclick=()=>setMode('S');$('mA').onclick=()=>setMode('A');
+$('lb').onclick=async()=>{
   const u=$('lu').value.trim(),p=$('lp').value;$('le').textContent='';
-  if(!u||!p){$('le').textContent='Enter your username and password.';return}$('lb').disabled=true;
+  if(!u||!p){$('le').textContent='Enter your username and password.';return}
+  $('lb').disabled=true;
   const {error}=await sb.auth.signInWithPassword({email:emailOf(u),password:p});
   $('lb').disabled=false;
   if(error){$('le').textContent='Wrong username or password.';return}
@@ -374,7 +380,7 @@ async function start(adminOnly){
 async function enter(){
   $('login').classList.add('hide');$('app').classList.remove('hide');$('nav').classList.remove('hide');$('out').classList.remove('hide');
   $('tA').classList.toggle('hide',me.role!=='admin');$('who').textContent=me.full_name.split(' ')[0];document.querySelector('#lbTabs [data-t="grp"]').classList.toggle('hide',me.role==='admin');
-  document.querySelector('.hero p').textContent=me.role==='student'?'Your level: '+me.level+'. You can open your level and the levels below it. Watch each lesson fully to unlock its test. After submitting the test, continue to homework.':'Pick a topic to watch the video, take its test, and continue to homework.';
+  document.querySelector('.hero p').textContent=me.role==='student'?'Your level: '+me.level+'. You can open your level and the levels below it. Open a topic to watch the video and do the test, then its Homework.':'Pick a topic to watch the video and do the test.';
   filter=me.role==='student'?me.level:'All';
   await loadLessons();await loadMyHw();if(me.role==='admin'){await loadStudents();loadHw()}
   show(me.role==='admin'?'vA':'vL');render();
@@ -396,40 +402,16 @@ async function loadStudents(){
   const {data:l}=await sb.rpc('leaderboard');xpMap={};(l||[]).forEach(r=>xpMap[r.id]=r.xp);
 }
 function render(){
-  const adm=me&&me.role==='admin',myR=me?LEVELS.indexOf(me.level):0,ef=adm?filter:(LEVELS.indexOf(filter)>=0&&LEVELS.indexOf(filter)<=myR?filter:(me?me.level:'All')),lv=adm?['All',...LEVELS]:LEVELS,q=$('q').value.toLowerCase();$('chips').innerHTML=lv.map(x=>{const lock=!adm&&LEVELS.indexOf(x)>myR;return `<button class="chip ${x===ef?'on':''} ${lock?'locked':''}" data-c="${esc(x)}" ${lock?'disabled':''}>${lock?'🔒 ':''}${esc(x)}</button>`}).join('');
+  const adm=me&&me.role==='admin',myR=me?LEVELS.indexOf(me.level):0,ef=adm?filter:(LEVELS.indexOf(filter)>=0&&LEVELS.indexOf(filter)<=myR?filter:(me?me.level:'All')),lv=adm?['All',...LEVELS]:LEVELS,q=$('q').value.toLowerCase();
+  $('chips').innerHTML=lv.map(x=>{const lock=!adm&&LEVELS.indexOf(x)>myR;return `<button class="chip ${x===ef?'on':''} ${lock?'locked':''}" data-c="${esc(x)}" ${lock?'disabled':''}>${lock?'🔒 ':''}${esc(x)}</button>`}).join('');
   document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{filter=b.dataset.c;render()});
-  const rawList=lessons.map((l,i)=>({...l,n:i+1})).filter(l=>(ef==='All'||l.level===ef)&&((l.title||'')+(l.description||'')).toLowerCase().includes(q));
-  
-  // Build rendered list items including homework card right after each lesson
-  let listHtml='';
-  rawList.forEach((l)=>{
-    // Lesson card
-    listHtml+=`<div class="topic" data-id="${l.id}"><span class="tn">${l.n}</span><div><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><i>›</i></div>`;
-    // Homework card right after the lesson
-    if(!adm){
-      const hw=myHw[l.id];
-      let hwClass='';
-      let hwText='Homework (Not submitted)';
-      if(hw){
-        if(hw.status==='checked'){
-          hwClass='checked';
-          hwText=`${esc(l.title)} (homework) — Checked${hw.grade?' · '+esc(hw.grade):''}`;
-        }else{
-          hwClass='checking';
-          hwText=`${esc(l.title)} (homework) — Being checked`;
-        }
-      }else{
-        hwText=`${esc(l.title)} (homework)`;
-      }
-      listHtml+=`<div class="topic hw-card ${hwClass}" data-hwid="${l.id}"><span class="tn" style="background:var(--acc2);font-size:15px">📝</span><div><h3>${esc(hwText)}</h3><p>${hw? (hw.status==='checked'?'Your teacher reviewed your homework.':'Your submission is waiting for review.'):'Click to submit or view homework task.'}</p></div><span class="tag" style="margin:0">Homework</span><i>›</i></div>`;
-    }
-  });
-
-  $('empty').classList.toggle('hide',rawList.length>0);$('grid').innerHTML=listHtml||'<div class="empty">No lessons found.</div>';
-
-  document.querySelectorAll('.topic[data-id]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description\vert{}\vert{}'';$('pl').textContent=l.level;show('vP');openLesson(l)});
-  document.querySelectorAll('.topic[data-hwid]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.hwid);show('vH');openHw(l)});
-
+  const list=lessons.map((l,i)=>({...l,n:i+1})).filter(l=>(ef==='All'||l.level===ef)&&((l.title||'')+(l.description||'')).toLowerCase().includes(q));
+  $('empty').classList.toggle('hide',list.length>0);
+  const hs=h=>!h?'To do':h.status==='checked'?'✓ Checked'+(h.grade?' · '+esc(h.grade):''):'Waiting for check',hcls=h=>!h?'':h.status==='checked'?'hw-done':'hw-wait';
+  $('grid').innerHTML=list.map(l=>`<div class="topic" data-id="${l.id}"><span class="tn">${l.n}</span><div><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p></div><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><i>›</i></div>`
+    +`<div class="topic ${adm?'':hcls(myHw[l.id])}" data-hw="${l.id}"><span class="tn" style="background:var(--acc2);font-size:20px">${!adm&&myHw[l.id]&&myHw[l.id].status==='checked'?'✓':'📝'}</span><div><h3>${esc(l.title)} (Homework)</h3><p>${esc(l.homework_task||'Send your homework for this lesson')}</p></div><span class="tag" style="margin:0">${adm?'Homework':hs(myHw[l.id])}</span><i>›</i></div>`).join('');
+  document.querySelectorAll('[data-hw]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.hw);show('vH');openHw(l)});
+  document.querySelectorAll('.topic[data-id]').forEach(c=>c.onclick=()=>{const l=lessons.find(x=>x.id===c.dataset.id);$('pv').src=l.url;$('pt').textContent=l.title;$('pd').textContent=l.description||'';$('pl').textContent=l.level;show('vP');openLesson(l)});
   if(me&&me.role==='admin')fillLs();
   $('nL').textContent=lessons.length;$('nS').textContent=students.length;
   $('aList').innerHTML=lessons.length?lessons.map(l=>`<div class="row"><b>${esc(l.title)}</b><span class="tag" data-l="${LEVELS.indexOf(l.level)}" style="margin:0">${esc(l.level)}</span><button class="btn sm ghost" data-dl="${l.id}">Delete</button></div>`).join(''):'<div class="empty">No lessons yet.</div>';
@@ -442,10 +424,12 @@ function render(){
 }
 $('q').oninput=render;
 
-$('gen').onclick=()=>{const w=['sun','moon','star','river','tiger','maple','cloud','pearl','eagle','lemon'];$('sP').value=w[Math.random()*10\vert{}0]+w[Math.random()*10\vert{}0]+(100+Math.random()*900\vert{}0)};$('sB').onclick=async()=>{
+$('gen').onclick=()=>{const w=['sun','moon','star','river','tiger','maple','cloud','pearl','eagle','lemon'];$('sP').value=w[Math.random()*10|0]+w[Math.random()*10|0]+(100+Math.random()*900|0)};
+$('sB').onclick=async()=>{
   const n=$('sN').value.trim(),u=$('sU').value.trim().toLowerCase().replace(/[^a-z0-9._-]/g,''),p=$('sP').value,m=$('sM');
   if(!n||!u||p.length<6){m.className='err';m.textContent='Fill in name, username and a password (6+ characters).';return}
   $('sB').disabled=true;
+  // a separate, non-persistent client so the admin stays logged in
   const tmp=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
   const {data,error}=await tmp.auth.signUp({email:emailOf(u),password:p,options:{data:{username:u,full_name:n,level:$('sL').value,group:$('sG').value}}});
   if(error||!data.user){m.className='err';m.textContent='Failed: '+(error?error.message:'unknown error');$('sB').disabled=false;return}
@@ -458,16 +442,17 @@ $('gen').onclick=()=>{const w=['sun','moon','star','river','tiger','maple','clou
 $('aS').onclick=async()=>{
   const f=$('aF').files[0],t=$('aT').value.trim(),m=$('aM'),b=$('aS');m.className='err';
   if(!t||!f){m.textContent='Add a title and choose a video.';return}
-  if(f.size>MAXMB*1024*1024){m.textContent='Video is over '+MAXMB+' MB. Choose a smaller video or raise the upload limit.';return}
+  if(f.size>MAXMB*1024*1024){m.textContent='Video is over '+MAXMB+' MB. Compress it first.';return}
   b.disabled=true;m.className='ok';m.textContent='Uploading… big videos can take several minutes. Keep this page open.';
   const path=crypto.randomUUID()+'.mp4';
   const up=await sb.storage.from('videos').upload(path,f,{contentType:f.type||'video/mp4'});
-  if(up.error){m.className='err';m.textContent='Upload failed: '+up.error.message;b.disabled=false;return}
+  if(up.error){m.className='err';m.textContent='Upload failed: '+up.error.message+(/size|exceed|large|413/i.test(up.error.message)?' — Supabase\'s free plan allows only 50 MB per file. Compress the video, or upgrade Supabase to Pro and raise the Global file size limit in Storage settings.':'');b.disabled=false;return}
   const {error}=await sb.from('lessons').insert({title:t,description:$('aD').value.trim(),level:$('aLv').value,video_path:path});
   b.disabled=false;
   if(error){m.className='err';m.textContent='Failed: '+error.message;return}
   $('aT').value=$('aD').value=$('aF').value='';m.textContent='Lesson added!';await loadLessons();render();
 };
+$('q').oninput=render;
 
 /* ---- admin: change student level ---- */
 document.addEventListener('change',async e=>{const d=e.target.dataset||{};
@@ -491,9 +476,11 @@ async function loadTest(){const id=$('tLs').value;$('qb').innerHTML='';const L=l
   if(!qs||!qs.length)return;
   const {data:ks}=await sb.from('question_keys').select('*').in('question_id',qs.map(q=>q.id));
   const km={};(ks||[]).forEach(k=>km[k.question_id]=k.correct);
-  $('qb').innerHTML=qs.map(q=>qBlock({...q,correct:km[q.id]})).join('')}$('tLs').onchange=loadTest;
+  $('qb').innerHTML=qs.map(q=>qBlock({...q,correct:km[q.id]})).join('')}
+$('tLs').onchange=loadTest;
 $('addQ').onclick=()=>$('qb').insertAdjacentHTML('beforeend',qBlock());
-$('qb').addEventListener('click',e=>{if(e.target.dataset.rq!==undefined)e.target.closest('.qcard').remove()});$('saveT').onclick=async()=>{const m=$('tM'),id=$('tLs').value;m.className='err';
+$('qb').addEventListener('click',e=>{if(e.target.dataset.rq!==undefined)e.target.closest('.qcard').remove()});
+$('saveT').onclick=async()=>{const m=$('tM'),id=$('tLs').value;m.className='err';
   if(!id){m.textContent='Add a lesson first.';return}
   const items=[];
   for(const b of document.querySelectorAll('#qb .qcard')){
@@ -538,11 +525,12 @@ async function loadMyHw(){myHw={};if(!me||me.role!=='student')return;
 $('hwBack').onclick=async()=>{await loadMyHw();render();show('vL')};
 /* ---- student: send homework ---- */
 async function openHw(l){const box=$('hwBox');box.innerHTML='';
+  if(me.role==='admin'){box.innerHTML=`<h2 style="margin:6px 6px 0">Homework: ${esc(l.title)}</h2><p style="margin:4px 6px 0;color:var(--mute);white-space:pre-wrap">${esc(l.homework_task||'No homework task written yet.')}</p><p style="margin:16px 6px 6px;color:var(--mute)">👀 This is what students see. You check their answers in <b>Admin → Homework to check</b>.</p>`;return}
   const {data:old}=await sb.from('homework').select('*').eq('lesson_id',l.id).order('created_at',{ascending:false});
   const mine=(old||[]).filter(h=>h.student_id===me.id);
   box.innerHTML=`<h2 style="margin:6px 6px 0">Homework: ${esc(l.title)}</h2><p style="margin:4px 6px 0;color:var(--mute);white-space:pre-wrap">${esc(l.homework_task||'Write your answer below or attach a file.')}</p><span class="tag" style="margin:10px 6px 0">⭐ Up to 70 XP</span>
   <div style="padding:6px"><label>Your answer</label><textarea id="hwA" placeholder="Type your homework here…"></textarea><label>Attach a file (optional, up to 20 MB)</label><div class="drop"><input type="file" id="hwF"></div><button class="btn" id="hwS">Send homework</button><div id="hwR" style="margin-top:8px"></div></div>`
-  +(mine.length?`<h3 style="margin:14px 6px 0">Your sent homework</h3>`+mine.map(h=>`<div class="qcard" style="margin:10px 6px"><span class="tag" style="margin:0">${h.status==='checked'?'Checked'+(h.grade?' · '+esc(h.grade):''):'Waiting for check'}</span> <small style="color:var(--mute)">${new Date(h.created_at).toLocaleString()}</small>${h.answer?`<p style="white-space:pre-wrap;margin:8px 0 0">${esc(h.answer)}</p>`:''}${h.feedback?`<p style="margin:8px 0 0"><b>Teacher:</b> ${esc(h.feedback)}</p>`:''}</div>`).join(''):'');
+  +(mine.length?`<h3 style="margin:14px 6px 0">Your sent homework</h3>`+mine.map(h=>`<div class="qcard" style="margin:10px 6px;${h.status==='checked'?'border-color:#2e9e5b;background:color-mix(in srgb,#2e9e5b 10%,transparent)':''}"><span class="tag" style="margin:0">${h.status==='checked'?'Checked'+(h.grade?' · '+esc(h.grade):''):'Waiting for check'}</span> <small style="color:var(--mute)">${new Date(h.created_at).toLocaleString()}</small>${h.answer?`<p style="white-space:pre-wrap;margin:8px 0 0">${esc(h.answer)}</p>`:''}${h.feedback?`<p style="margin:8px 0 0"><b>Teacher:</b> ${esc(h.feedback)}</p>`:''}</div>`).join(''):'');
   box.classList.remove('hide');
   $('hwS').onclick=async()=>{const a=$('hwA').value.trim(),f=$('hwF').files[0],r=$('hwR');r.className='err';
     if(!a&&!f){r.textContent='Write your answer or attach a file.';return}
@@ -557,34 +545,9 @@ async function openHw(l){const box=$('hwBox');box.innerHTML='';
     await loadMyHw();render();await openHw(l);$('hwR').className='ok';$('hwR').textContent='Homework sent! Your teacher will check it.'}}
 /* ---- leaderboard ---- */
 let lb=[],lbTab='all';
-async function loadLb(){const {data}=await sb.rpc('leaderboard');lb=data||[];renderLb();await loadXpHistory()}
-async function loadXpHistory(){
-  const box=$('xpHistory');
-  if(!me||me.role!=='student'){box.innerHTML='<div class="empty">XP history is available to students.</div>';return}
-  box.innerHTML='<div class="empty">Loading XP history…</div>';
-  const {data,error}=await sb.rpc('my_xp_history');
-  if(error){box.innerHTML='<div class="empty">Could not load XP history. Run the XP history SQL update, then refresh.</div>';return}
-  if(!data||!data.length){box.innerHTML='<div class="empty">No XP activity yet. Complete a test or submit homework to get started.</div>';return}
-  const reasonLabel=r=>{
-    const v=String(r||'').toLowerCase();
-    if(v==='test'||v.includes('test'))return 'Test result';
-    if(v==='homework'||v.includes('homework'))return 'Homework checked';
-    if(v==='admin'||v.includes('admin'))return 'Teacher adjustment';
-    return r||'XP activity';
-  };
-  box.innerHTML=data.map(x=>{
-    const lesson=lessons.find(l=>l.id===x.lesson_id);
-    const title=lesson?lesson.title:(x.lesson_id?'Lesson activity':'General XP adjustment');
-    const points=Number(x.points)||0;
-    const signed=points>0?'+'+points:String(points);
-    const color=points>0?'var(--acc2)':points<0?'var(--danger)':'var(--mute)';
-    return `<div class="row" style="align-items:flex-start">
-      <div style="flex:1;min-width:160px"><b>${esc(reasonLabel(x.reason))}</b><br><small>${esc(title)} · ${x.created_at?new Date(x.created_at).toLocaleString():'Date unavailable'}</small>${x.note?`<p style="margin:4px 0 0;color:var(--mute)">${esc(x.note)}</p>`:''}</div>
-      <b style="flex:none;color:${color}">${signed} XP</b>
-    </div>`;
-  }).join('');
-}
-$('tB').onclick=async()=>{show('vB');await loadLb()};$('lbTabs').addEventListener('click',e=>{const t=e.target.dataset&&e.target.dataset.t;if(!t)return;lbTab=t;
+async function loadLb(){const {data}=await sb.rpc('leaderboard');lb=data||[];renderLb()}
+$('tB').onclick=async()=>{show('vB');await loadLb()};
+$('lbTabs').addEventListener('click',e=>{const t=e.target.dataset&&e.target.dataset.t;if(!t)return;lbTab=t;
   document.querySelectorAll('#lbTabs .chip').forEach(b=>b.classList.toggle('on',b.dataset.t===t));renderLb()});
 function renderLb(){
   const medal=i=>['🥇','🥈','🥉'][i]||(i+1),isS=me.role==='student',myIdx=lb.findIndex(r=>r.id===me.id);
@@ -609,12 +572,13 @@ function renderFlow(l,hasQ,done){const f=$('flow');
   if(!done){f.innerHTML=`<button class="btn" disabled>🔒 Watch the whole video to unlock the ${hasQ?'test':'homework'}</button>`;return}
   if(hasQ){f.innerHTML='<button class="btn" id="startT">▶ Start test</button>';
     $('startT').onclick=()=>{$('testBox').classList.remove('hide');f.innerHTML='';$('testBox').scrollIntoView({behavior:'smooth',block:'start'})}}
-  else{f.innerHTML='<button class="btn" id="goHw">📝 Go to homework</button>';$('goHw',)=>();show('vH');openHw(l)}}
+  else{f.innerHTML='<button class="btn" id="goHw">📝 Go to homework</button>';$('goHw').onclick=()=>{show('vH');openHw(l)}}}
 async function openLesson(l){
   const v=$('pv'),adm=me.role==='admin';maxT=0;v.playbackRate=1;
   $('testBox').classList.add('hide');$('testBox').innerHTML='';$('flow').innerHTML='';
   const hasQ=await prepTest(l);
   renderFlow(l,hasQ,adm||isWatched(l));
+  // students: no speeding up, no skipping ahead until the video has been watched once
   v.onratechange=()=>{if(!adm&&v.playbackRate!==1)v.playbackRate=1};
   v.onseeking=()=>{if(!adm&&!isWatched(l)&&v.currentTime>maxT+1.5)v.currentTime=maxT};
   v.ontimeupdate=()=>{if(v.currentTime>maxT&&v.currentTime<maxT+2)maxT=v.currentTime};
@@ -626,7 +590,8 @@ async function prepTest(l){const box=$('testBox');box.classList.add('hide');box.
   box.innerHTML=`<h2 style="margin:6px 6px 0">Test: ${esc(l.title)}</h2><p style="margin:4px 6px 0;color:var(--mute)">Answer every question, then press Submit. Perfect score = 30 XP, each mistake = −3 XP.</p>`+qs.map((q,i)=>`<div class="qcard" data-q="${q.id}"><b>${i+1}. ${esc(q.question)}</b>`+q.options.map((o,j)=>`<label class="opt" data-j="${j}"><input type="radio" name="q${q.id}" value="${j}">${esc(o)}</label>`).join('')+`</div>`).join('')+`<button class="btn" id="subT" style="margin:6px;width:calc(100% - 12px)">Submit answers</button><div id="tRes" style="margin:6px"></div>`;
   $('subT').onclick=async()=>{const ans={};let miss=false;
     qs.forEach(q=>{const c=box.querySelector(`input[name="q${q.id}"]:checked`);if(c)ans[q.id]=+c.value;else miss=true});
-    if(miss){$('tRes').className='err';$('tRes').textContent='Please answer every question.';return}$('subT').disabled=true;
+    if(miss){$('tRes').className='err';$('tRes').textContent='Please answer every question.';return}
+    $('subT').disabled=true;
     const {data,error}=await sb.rpc('submit_test',{p_lesson:l.id,p_answers:ans});
     $('subT').disabled=false;
     if(error){$('tRes').className='err';$('tRes').textContent='Could not submit: '+error.message;return}
